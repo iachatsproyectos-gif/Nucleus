@@ -1,0 +1,259 @@
+.node.chapter-node {
+  border-style: solid;
+}
+
+.node.chapter-node .chapter-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--font-display);
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  align-self: flex-start;
+  text-transform: uppercase;
+}
+
+.node.chapter-node .chapter-hint {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--dim);
+  font-family: var(--font-ui);
+  font-style: italic;
+}
+
+.node.chapter-node.phase-fogged {
+  opacity: 0.28;
+  filter: blur(6px);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  position: relative;
+}
+
+.node.chapter-node.phase-fogged::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+}
+
+.node.chapter-node.phase-fogged .title-input {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.node.chapter-node.phase-fogged:hover {
+  filter: blur(5px);
+  opacity: 0.34;
+}
+
+.node.chapter-node.phase-unlocked {
+  opacity: 1;
+  filter: none;
+  border-color: rgba(255, 255, 255, 0.35);
+  animation: chapter-pulse 3s ease-in-out infinite;
+}
+
+.node.chapter-node.phase-unlocked .chapter-badge {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+@keyframes chapter-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(255, 255, 255, 0.04); }
+  50% { box-shadow: 0 0 24px rgba(255, 255, 255, 0.1); }
+}
+
+.node.chapter-node.phase-active {
+  opacity: 1;
+  filter: none;
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 255, 255, 0.06);
+}
+
+.node.chapter-node.phase-active .chapter-badge {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.node.chapter-node.phase-closed {
+  opacity: 0.4;
+  filter: grayscale(1);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.node.chapter-node.phase-closed .chapter-badge {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.node.chapter-node.chapter-revealing {
+  animation: chapter-reveal 1.5s ease-out forwards;
+}
+
+@keyframes chapter-reveal {
+  0% { opacity: 0.28; filter: blur(6px); }
+  60% { opacity: 0.8; filter: blur(1px); }
+  100% { opacity: 1; filter: none; }
+}
+
+#chapter-toast {
+  position: fixed;
+  top: calc(var(--topbar-height) + 12px);
+  left: 52px;
+  transform: translateY(-8px);
+  z-index: 10000;
+  padding: 10px 18px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  max-width: min(90vw, 420px);
+  backdrop-filter: var(--blur-soft);
+  font-style: italic;
+}
+
+#chapter-toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chapter-modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9000;
+  width: min(90vw, 400px);
+  background: rgba(0, 0, 0, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.95);
+  backdrop-filter: var(--blur-panel);
+}
+
+.chapter-modal.visible {
+  display: flex;
+  flex-direction: column;
+}
+
+.chapter-modal-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.chapter-modal-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chapter-modal-body textarea {
+  width: 100%;
+  min-height: 80px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 10px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.chapter-modal-body textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.chapter-prereq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.chapter-prereq-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--dim);
+  cursor: pointer;
+  font-family: var(--font-ui);
+}
+
+.chapter-prereq-item input {
+  accent-color: #fff;
+}
+
+.chapter-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+
+.chapter-modal-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--dim);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-transform: lowercase;
+}
+
+.chapter-modal-btn:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.chapter-modal-btn.primary {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #000;
+}
+
+.chapter-modal-btn.primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+#chapter-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 8999;
+}
+
+#chapter-modal-overlay.visible {
+  display: block;
+}
+
+#menu .menu-chapter-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+}

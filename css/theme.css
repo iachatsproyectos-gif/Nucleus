@@ -1,0 +1,29 @@
+/* Nucleus — estética monocrómica, serif + grano */
+
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap');
+
+:root {
+  --bg: #000000;
+  --text: #f5f5f5;
+  --dim: rgba(255, 255, 255, 0.42);
+  --muted: rgba(255, 255, 255, 0.18);
+  --accent: #ffffff;
+  --warn: rgba(255, 255, 255, 0.55);
+  --node-bg: rgba(0, 0, 0, 0.72);
+  --border: rgba(255, 255, 255, 0.14);
+  --border-focus: #ffffff;
+  --glow: rgba(255, 255, 255, 0.08);
+  --font-display: 'Crimson Pro', 'Times New Roman', Georgia, serif;
+  --font-ui: 'DM Sans', system-ui, sans-serif;
+  --topbar-height: 52px;
+  --spine-x: 28px;
+  --blur-soft: blur(12px);
+  --blur-panel: blur(20px);
+}
+
+.svg-filters {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}

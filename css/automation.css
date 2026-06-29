@@ -1,0 +1,200 @@
+.auto-node {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.auto-node.auto-trigger {
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+.auto-node.node-running {
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 0 28px rgba(255, 255, 255, 0.12) !important;
+  animation: auto-pulse 1.2s ease-in-out infinite;
+}
+
+.auto-node.node-done {
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.06) !important;
+}
+
+.auto-node.node-error {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  opacity: 0.65;
+}
+
+@keyframes auto-pulse {
+  0%, 100% { box-shadow: 0 0 16px rgba(255, 255, 255, 0.06); }
+  50% { box-shadow: 0 0 32px rgba(255, 255, 255, 0.14); }
+}
+
+.auto-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.2em;
+  margin-bottom: 8px;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+
+.auto-select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  outline: none;
+  text-transform: none;
+}
+
+.auto-select:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.auto-number {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  padding: 8px;
+  outline: none;
+  text-transform: none;
+}
+
+.auto-hint {
+  font-size: 10px;
+  color: var(--dim);
+  text-transform: none;
+  line-height: 1.5;
+  font-family: var(--font-ui);
+}
+
+.auto-field {
+  text-transform: none;
+}
+
+.auto-node.auto-read-map,
+.auto-node.auto-write-map {
+  width: 280px;
+}
+
+.auto-check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--dim);
+  text-transform: none;
+  cursor: pointer;
+  margin-top: 4px;
+  font-family: var(--font-ui);
+}
+
+.auto-check-label.auto-check-hidden {
+  display: none;
+}
+
+.auto-check {
+  accent-color: #ffffff;
+}
+
+.auto-select option {
+  text-transform: none;
+  background: #000;
+}
+
+#run-flow-btn {
+  color: rgba(255, 255, 255, 0.75) !important;
+  letter-spacing: 0.1em;
+}
+
+#run-flow-btn:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+#run-flow-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+#auto-log-panel {
+  position: fixed;
+  bottom: 24px;
+  left: 52px;
+  width: 360px;
+  max-height: 200px;
+  background: rgba(0, 0, 0, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: var(--blur-panel);
+  font-family: var(--font-ui);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.9);
+}
+
+#auto-log-panel.collapsed #auto-log-body {
+  display: none;
+}
+
+#auto-log-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+}
+
+#auto-log-header span {
+  flex: 1;
+}
+
+#auto-log-header button {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--dim);
+  font-size: 10px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  text-transform: lowercase;
+}
+
+#auto-log-header button:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+#auto-log-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+  max-height: 150px;
+  text-transform: none;
+}
+
+.auto-log-line {
+  font-size: 11px;
+  line-height: 1.55;
+  margin-bottom: 4px;
+  color: var(--dim);
+  word-break: break-word;
+}
+
+.auto-log-info { color: var(--dim); }
+.auto-log-success { color: rgba(255, 255, 255, 0.85); }
+.auto-log-error { color: rgba(255, 255, 255, 0.4); font-style: italic; }
+.auto-log-data { color: rgba(255, 255, 255, 0.65); font-family: var(--font-ui); }

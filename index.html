@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nucleus</title>
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/nodes.css">
+  <link rel="stylesheet" href="css/features.css">
+  <link rel="stylesheet" href="css/automation.css">
+  <link rel="stylesheet" href="css/chapters.css">
+  <link rel="stylesheet" href="css/toolbar.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+<div id="grain-overlay" aria-hidden="true"></div>
+
+<header id="app-topbar">
+<div id="app-brand"><span id="app-brand-title">Nucleus</span></div>
+<span id="breadcrumb"><span id="breadcrumb-prompt">> </span>HOME</span>
+<div id="ui-layer">
+
+  <div class="ui-cluster">
+    <button id="undo-btn" class="mini-btn mini-btn-compact" type="button" title="Ctrl+Z">deshacer</button>
+  </div>
+
+  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="nodes">
+    <button class="ui-cluster-toggle mini-btn mini-btn-compact" type="button">
+      nodos<i data-lucide="chevron-down" class="chevron"></i>
+    </button>
+    <div class="ui-dropdown">
+      <button id="add-system-btn" class="dropdown-item" type="button">añadir nodo</button>
+      <button id="add-stack-btn" class="dropdown-item" type="button">añadir sub</button>
+    </div>
+  </div>
+
+  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="media">
+    <button class="ui-cluster-toggle mini-btn mini-btn-compact" type="button">
+      media<i data-lucide="chevron-down" class="chevron"></i>
+    </button>
+    <div class="ui-dropdown">
+      <button id="add-doc-btn" class="dropdown-item" type="button">documento</button>
+      <button id="add-link-btn" class="dropdown-item" type="button">enlace</button>
+      <button id="add-photo-btn" class="dropdown-item" type="button">foto</button>
+    </div>
+  </div>
+
+  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="auto">
+    <button class="ui-cluster-toggle mini-btn mini-btn-compact" type="button">
+      auto<i data-lucide="chevron-down" class="chevron"></i>
+    </button>
+    <div class="ui-dropdown">
+      <button id="add-trigger-btn" class="dropdown-item" type="button">trigger</button>
+      <button id="add-transform-btn" class="dropdown-item" type="button">transformar</button>
+      <button id="add-copy-btn" class="dropdown-item" type="button">copiar</button>
+      <button id="add-log-action-btn" class="dropdown-item" type="button">log</button>
+      <button id="add-delay-btn" class="dropdown-item" type="button">espera</button>
+      <button id="add-notify-btn" class="dropdown-item" type="button">alerta</button>
+      <div class="dropdown-divider"></div>
+      <button id="add-read-map-btn" class="dropdown-item" type="button">leer mapa</button>
+      <button id="add-write-map-btn" class="dropdown-item" type="button">escribir mapa</button>
+    </div>
+  </div>
+
+  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="chapters">
+    <button class="ui-cluster-toggle mini-btn mini-btn-compact" type="button">
+      capítulos<i data-lucide="chevron-down" class="chevron"></i>
+    </button>
+    <div class="ui-dropdown">
+      <button id="add-chapter-active-btn" class="dropdown-item" type="button">capítulo activo</button>
+      <button id="add-chapter-fogged-btn" class="dropdown-item" type="button">horizonte (niebla)</button>
+    </div>
+  </div>
+
+  <div class="ui-cluster ui-cluster-run">
+    <button id="run-flow-btn" class="mini-btn mini-btn-compact" type="button">ejecutar</button>
+  </div>
+
+  <div class="ui-cluster">
+    <button id="help-toggle-btn" class="mini-btn mini-btn-compact" type="button" title="Ayuda">ayuda</button>
+  </div>
+
+</div>
+</header>
+
+<aside id="help-panel" aria-hidden="true">
+  <div class="help-panel-header">
+    <span>ayuda</span>
+    <button id="help-panel-close" type="button" aria-label="Cerrar ayuda">×</button>
+  </div>
+  <div class="help-panel-body">
+    <div class="dropdown-help">
+      <strong>Conexiones</strong>
+      <p>Clic en un puerto (+) → clic en otro nodo. Usa arriba/abajo para ramas verticales.</p>
+      <p><kbd>Esc</kbd> cancela conexión · Clic derecho en línea para borrarla</p>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-help">
+      <strong>Canvas</strong>
+      <p>Arrastra fondo para mover · Rueda para zoom · <kbd>Shift</kbd>+arrastre selecciona varios</p>
+      <p><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · Breadcrumb para volver de un nivel</p>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-help">
+      <strong>Capítulos</strong>
+      <p><em>Capítulo activo</em> es el presente. <em>Horizonte</em> crea una silueta en niebla con prerequisitos opcionales.</p>
+      <p>Al <em>cerrar</em> un capítulo activo, los del horizonte que dependían de él salen de la niebla.</p>
+      <p><em>Acercarme</em> (clic derecho) convierte un capítulo disponible en presente antes de entrar.</p>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-help">
+        <strong>Automatización</strong>
+        <p>Añade un <em>Trigger</em>, conecta nodos y pulsa <em>Run</em>. Ver log abajo izquierda.</p>
+        <p><em>Read Map</em> lee cualquier nodo del mapa. <em>Write Map</em> escribe texto completo o divide por líneas en tareas hijas.</p>
+    </div>
+  </div>
+</aside>
+
+<div id="viewport">
+  <div id="workspace">
+    <svg id="svg-layer"></svg>
+    <div id="nodes-layer"></div>
+  </div>
+</div>
+
+<div id="chapter-toast"></div>
+
+<div id="menu">
+  <div id="menu-enter">entrar nivel</div>
+  <div id="menu-chapter-divider" class="menu-chapter-divider" style="display:none"></div>
+  <div id="menu-approach" style="display:none">acercarme</div>
+  <div id="menu-close-chapter" style="display:none">cerrar capítulo</div>
+  <div id="menu-send-horizon" style="display:none">enviar al horizonte</div>
+  <div id="menu-prereqs" style="display:none">prerequisitos</div>
+  <div id="menu-paint">marcar sub</div>
+  <div id="menu-run-from">ejecutar desde aquí</div>
+  <div id="menu-delete">eliminar</div>
+</div>
+
+<div id="selection-box"></div>
+
+<div id="auto-log-panel">
+  <div id="auto-log-header">
+    <span>registro</span>
+    <button id="auto-log-clear" type="button">limpiar</button>
+    <button id="auto-log-toggle" type="button">_</button>
+  </div>
+  <div id="auto-log-body"></div>
+</div>
+
+<div id="doc-modal-overlay"></div>
+<div id="doc-modal">
+  <div id="doc-modal-header">
+    <span id="doc-modal-title">DOCUMENT EDITOR</span>
+    <button id="close-doc-modal">X</button>
+  </div>
+  <textarea id="doc-textarea" placeholder="[ START TYPING DOCUMENT... ]"></textarea>
+</div>
+
+<div id="link-modal" class="media-modal">
+  <div class="media-modal-header"><span>LINK EDITOR</span><button class="media-close-btn" data-target="link">X</button></div>
+  <div class="media-modal-body">
+    <input type="text" id="link-url" class="media-input" placeholder="https://...">
+    <button id="visit-link-btn" class="media-btn">Open Link in New Tab</button>
+  </div>
+</div>
+
+<div id="photo-modal" class="media-modal">
+  <div class="media-modal-header"><span>PHOTO URL</span><button class="media-close-btn" data-target="photo">X</button></div>
+  <div class="media-modal-body">
+    <input type="text" id="photo-url" class="media-input" placeholder="Paste image URL here...">
+  </div>
+</div>
+
+<div id="chapter-modal-overlay"></div>
+
+<div id="chapter-close-modal" class="chapter-modal">
+  <div class="chapter-modal-header"><span>CERRAR CAPÍTULO</span></div>
+  <div class="chapter-modal-body">
+    <p style="font-size:12px;color:#888;margin:0;">Opcional: deja una nota de cierre para tu yo futuro.</p>
+    <textarea id="chapter-close-note" placeholder="Nota de cierre (opcional)..."></textarea>
+  </div>
+  <div class="chapter-modal-actions">
+    <button id="chapter-close-cancel" class="chapter-modal-btn" type="button">Cancelar</button>
+    <button id="chapter-close-confirm" class="chapter-modal-btn primary" type="button">Cerrar capítulo</button>
+  </div>
+</div>
+
+<div id="chapter-prereqs-modal" class="chapter-modal">
+  <div class="chapter-modal-header"><span>PREREQUISITOS</span></div>
+  <div class="chapter-modal-body">
+    <p style="font-size:12px;color:#888;margin:0;">Selecciona capítulos que deben cerrarse antes de que este salga de la niebla.</p>
+    <div id="chapter-prereq-list" class="chapter-prereq-list"></div>
+  </div>
+  <div class="chapter-modal-actions">
+    <button id="chapter-prereqs-cancel" class="chapter-modal-btn" type="button">Cancelar</button>
+    <button id="chapter-prereqs-save" class="chapter-modal-btn primary" type="button">Guardar</button>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/viewport.js"></script>
+<script src="js/connections.js"></script>
+<script src="js/chapters.js"></script>
+<script src="js/map-tree.js"></script>
+<script src="js/nodes.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/ui-toolbar.js"></script>
+<script src="js/features-markers.js"></script>
+<script src="js/features-documents.js"></script>
+<script src="js/features-media.js"></script>
+<script src="js/automation.js"></script>
+<script src="js/features-automation.js"></script>
+<script src="js/features-chapters.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
