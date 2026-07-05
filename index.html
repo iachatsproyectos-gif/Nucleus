@@ -3,15 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Nucleus — organizador mental espacial. Mapas y capítulos en tu navegador.">
+  <meta name="theme-color" content="#000000">
   <title>Nucleus</title>
+  <link rel="icon" href="assets/favicon.ico?v=24" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=24">
+  <link rel="apple-touch-icon" href="assets/icon-192.png?v=24">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/nodes.css">
   <link rel="stylesheet" href="css/features.css">
-  <link rel="stylesheet" href="css/automation.css">
   <link rel="stylesheet" href="css/chapters.css">
   <link rel="stylesheet" href="css/toolbar.css">
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="css/onboarding.css">
+  <link rel="stylesheet" href="css/panels.css">
+  <script src="https://unpkg.com/lucide@0.468.0"></script>
 </head>
 <body>
 
@@ -19,7 +26,6 @@
 
 <header id="app-topbar">
 <div id="app-brand"><span id="app-brand-title">Nucleus</span></div>
-<span id="breadcrumb"><span id="breadcrumb-prompt">> </span>HOME</span>
 <div id="ui-layer">
 
   <div class="ui-cluster">
@@ -32,7 +38,9 @@
     </button>
     <div class="ui-dropdown">
       <button id="add-system-btn" class="dropdown-item" type="button">añadir nodo</button>
+      <button id="add-label-btn" class="dropdown-item" type="button">añadir título</button>
       <button id="add-stack-btn" class="dropdown-item" type="button">añadir sub</button>
+      <button id="add-region-btn" class="dropdown-item" type="button">añadir región</button>
     </div>
   </div>
 
@@ -47,21 +55,38 @@
     </div>
   </div>
 
-  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="auto">
+  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="data">
     <button class="ui-cluster-toggle mini-btn mini-btn-compact" type="button">
-      auto<i data-lucide="chevron-down" class="chevron"></i>
+      datos<i data-lucide="chevron-down" class="chevron"></i>
     </button>
     <div class="ui-dropdown">
-      <button id="add-trigger-btn" class="dropdown-item" type="button">trigger</button>
-      <button id="add-transform-btn" class="dropdown-item" type="button">transformar</button>
-      <button id="add-copy-btn" class="dropdown-item" type="button">copiar</button>
-      <button id="add-log-action-btn" class="dropdown-item" type="button">log</button>
-      <button id="add-delay-btn" class="dropdown-item" type="button">espera</button>
-      <button id="add-notify-btn" class="dropdown-item" type="button">alerta</button>
+      <div class="map-selector-row">
+        <select id="map-selector" aria-label="Mapa activo"></select>
+        <button id="map-new-btn" type="button">+</button>
+        <button id="map-rename-btn" type="button">renombrar</button>
+        <button id="map-delete-btn" type="button">eliminar</button>
+      </div>
+      <button id="export-map-btn" class="dropdown-item" type="button">exportar mapa</button>
+      <button id="import-map-btn" class="dropdown-item" type="button">importar mapa</button>
+      <button id="snapshots-toggle-btn" class="dropdown-item" type="button">snapshots</button>
+      <button id="sync-toggle-btn" class="dropdown-item" type="button">sync nube</button>
       <div class="dropdown-divider"></div>
-      <button id="add-read-map-btn" class="dropdown-item" type="button">leer mapa</button>
-      <button id="add-write-map-btn" class="dropdown-item" type="button">escribir mapa</button>
+      <button id="export-keep-btn" class="dropdown-item" type="button">exportar a Keep</button>
+      <button id="import-keep-btn" class="dropdown-item" type="button">importar desde Keep</button>
     </div>
+  </div>
+  <input type="file" id="import-map-input" accept="application/json,.json" hidden>
+
+  <div class="ui-cluster">
+    <button id="view-filter-btn" class="mini-btn mini-btn-compact" type="button">vista: todo</button>
+  </div>
+
+  <div class="ui-cluster">
+    <button id="search-toggle-btn" class="mini-btn mini-btn-compact" type="button" title="Ctrl+K">buscar</button>
+  </div>
+
+  <div class="ui-cluster">
+    <button id="focus-toggle-btn" class="mini-btn mini-btn-compact" type="button">enfoque: off</button>
   </div>
 
   <div class="ui-cluster ui-dropdown-wrap" data-dropdown="chapters">
@@ -71,17 +96,17 @@
     <div class="ui-dropdown">
       <button id="add-chapter-active-btn" class="dropdown-item" type="button">capítulo activo</button>
       <button id="add-chapter-fogged-btn" class="dropdown-item" type="button">horizonte (niebla)</button>
+      <button id="archive-toggle-btn" class="dropdown-item" type="button">archivo (cerrados)</button>
     </div>
-  </div>
-
-  <div class="ui-cluster ui-cluster-run">
-    <button id="run-flow-btn" class="mini-btn mini-btn-compact" type="button">ejecutar</button>
   </div>
 
   <div class="ui-cluster">
     <button id="help-toggle-btn" class="mini-btn mini-btn-compact" type="button" title="Ayuda">ayuda</button>
   </div>
 
+</div>
+<div id="location-wrap" title="Estás en el mapa principal">
+  <input type="text" id="location-label" class="location-input" readonly value="HOME" aria-label="Ubicación actual" tabindex="-1">
 </div>
 </header>
 
@@ -93,14 +118,21 @@
   <div class="help-panel-body">
     <div class="dropdown-help">
       <strong>Conexiones</strong>
-      <p>Clic en un puerto (+) → clic en otro nodo. Usa arriba/abajo para ramas verticales.</p>
+      <p>Clic en un chuzo de conexión → clic en otro nodo. Usa arriba/abajo para ramas verticales.</p>
       <p><kbd>Esc</kbd> cancela conexión · Clic derecho en línea para borrarla</p>
     </div>
     <div class="dropdown-divider"></div>
     <div class="dropdown-help">
       <strong>Canvas</strong>
-      <p>Arrastra fondo para mover · Rueda para zoom · <kbd>Shift</kbd>+arrastre selecciona varios</p>
-      <p><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · Breadcrumb para volver de un nivel</p>
+      <p>Arrastra fondo para mover · Rueda o pinch para zoom · <kbd>Shift</kbd>+arrastre selecciona varios</p>
+      <p><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · Barra superior = nivel actual (clic sube) · <kbd>Ctrl</kbd>+<kbd>K</kbd> buscar</p>
+      <p><kbd>F</kbd> enfoque · <kbd>Alt</kbd>+↑ subir nivel · Shift+clic marcador = etiqueta vida</p>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-help">
+      <strong>Datos</strong>
+      <p><em>Exportar mapa</em> guarda un JSON de respaldo. <em>Importar</em> restaura desde archivo.</p>
+      <p>Tus datos viven solo en este navegador (localStorage).</p>
     </div>
     <div class="dropdown-divider"></div>
     <div class="dropdown-help">
@@ -111,14 +143,78 @@
     </div>
     <div class="dropdown-divider"></div>
     <div class="dropdown-help">
-        <strong>Automatización</strong>
-        <p>Añade un <em>Trigger</em>, conecta nodos y pulsa <em>Run</em>. Ver log abajo izquierda.</p>
-        <p><em>Read Map</em> lee cualquier nodo del mapa. <em>Write Map</em> escribe texto completo o divide por líneas en tareas hijas.</p>
+      <strong>Edición</strong>
+      <p>Clic derecho → <em>duplicar</em> clona nodos seleccionados. Filtro <em>vista</em> alterna presente/horizonte.</p>
     </div>
   </div>
 </aside>
 
+<aside id="search-panel" aria-hidden="true">
+  <div class="panel-header">
+    <span>buscar en el mapa</span>
+    <button id="search-panel-close" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <input type="search" id="search-input" class="search-input" placeholder="Título o ruta…" autocomplete="off">
+  <div class="search-filter-bar">
+    <button type="button" class="search-filter-chip active" data-filter="all">todo</button>
+    <button type="button" class="search-filter-chip" data-filter="chapter">capítulo</button>
+    <button type="button" class="search-filter-chip" data-filter="stack">pila</button>
+    <button type="button" class="search-filter-chip" data-filter="marked">marcado</button>
+    <button type="button" class="search-filter-chip" data-filter="fog">niebla</button>
+  </div>
+  <div id="search-results" class="search-results"></div>
+</aside>
+
+<aside id="archive-panel" aria-hidden="true">
+  <div class="panel-header">
+    <span>archivo — capítulos cerrados</span>
+    <button id="archive-panel-close" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <div id="archive-results" class="search-results"></div>
+</aside>
+
+<aside id="sync-panel" aria-hidden="true">
+  <div class="panel-header">
+    <span>sync nube (opcional)</span>
+    <button id="sync-panel-close" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <div class="sync-form">
+    <p class="sync-privacy">Tus datos se cifran en el navegador antes de subir. Sync desactivado por defecto.</p>
+    <input type="url" id="sync-api-url" placeholder="http://localhost:3001">
+    <input type="email" id="sync-email" placeholder="email">
+    <input type="password" id="sync-password" placeholder="contraseña">
+    <input type="password" id="sync-passphrase" placeholder="passphrase cifrado">
+    <button type="button" id="sync-login-btn">iniciar sesión</button>
+    <button type="button" id="sync-push-btn">subir mapa</button>
+    <button type="button" id="sync-pull-btn">descargar mapa</button>
+    <button type="button" id="keep-api-push">Keep API: enviar</button>
+    <button type="button" id="keep-api-pull">Keep API: importar</button>
+  </div>
+</aside>
+
+<aside id="snapshots-panel" aria-hidden="true">
+  <div class="panel-header">
+    <span>snapshots locales</span>
+    <button id="snapshots-panel-close" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <div style="padding:12px 16px;">
+    <button type="button" id="snapshot-save-btn" class="chapter-modal-btn primary">guardar snapshot</button>
+  </div>
+  <div id="snapshot-list" class="search-results"></div>
+</aside>
+
 <div id="viewport">
+  <div id="empty-state-overlay">
+    <div class="empty-state-inner">
+      <h2>Tu mapa está vacío</h2>
+      <p>Añade una pila para soltar ideas, un nodo para desarrollar, o un horizonte en niebla.</p>
+      <div class="empty-state-actions">
+        <button type="button" id="empty-add-stack" class="empty-state-btn">añadir sub</button>
+        <button type="button" id="empty-add-node" class="empty-state-btn">añadir nodo</button>
+        <button type="button" id="empty-add-horizon" class="empty-state-btn">horizonte (niebla)</button>
+      </div>
+    </div>
+  </div>
   <div id="workspace">
     <svg id="svg-layer"></svg>
     <div id="nodes-layer"></div>
@@ -134,43 +230,37 @@
   <div id="menu-close-chapter" style="display:none">cerrar capítulo</div>
   <div id="menu-send-horizon" style="display:none">enviar al horizonte</div>
   <div id="menu-prereqs" style="display:none">prerequisitos</div>
+  <div id="menu-promote-chapter" style="display:none">promover a capítulo</div>
+  <div id="menu-expand-list" style="display:none">desplegar como sub-pilas</div>
+  <div id="menu-export-keep" style="display:none">exportar a Keep</div>
+  <div id="menu-duplicate">duplicar</div>
   <div id="menu-paint">marcar sub</div>
-  <div id="menu-run-from">ejecutar desde aquí</div>
   <div id="menu-delete">eliminar</div>
 </div>
 
 <div id="selection-box"></div>
 
-<div id="auto-log-panel">
-  <div id="auto-log-header">
-    <span>registro</span>
-    <button id="auto-log-clear" type="button">limpiar</button>
-    <button id="auto-log-toggle" type="button">_</button>
-  </div>
-  <div id="auto-log-body"></div>
-</div>
-
 <div id="doc-modal-overlay"></div>
 <div id="doc-modal">
   <div id="doc-modal-header">
-    <span id="doc-modal-title">DOCUMENT EDITOR</span>
+    <span id="doc-modal-title">EDITOR DE DOCUMENTO</span>
     <button id="close-doc-modal">X</button>
   </div>
-  <textarea id="doc-textarea" placeholder="[ START TYPING DOCUMENT... ]"></textarea>
+  <textarea id="doc-textarea" placeholder="[ ESCRIBE TU DOCUMENTO… ]"></textarea>
 </div>
 
 <div id="link-modal" class="media-modal">
-  <div class="media-modal-header"><span>LINK EDITOR</span><button class="media-close-btn" data-target="link">X</button></div>
+  <div class="media-modal-header"><span>EDITOR DE ENLACE</span><button class="media-close-btn" data-target="link">X</button></div>
   <div class="media-modal-body">
     <input type="text" id="link-url" class="media-input" placeholder="https://...">
-    <button id="visit-link-btn" class="media-btn">Open Link in New Tab</button>
+    <button id="visit-link-btn" class="media-btn">Abrir enlace en nueva pestaña</button>
   </div>
 </div>
 
 <div id="photo-modal" class="media-modal">
-  <div class="media-modal-header"><span>PHOTO URL</span><button class="media-close-btn" data-target="photo">X</button></div>
+  <div class="media-modal-header"><span>URL DE FOTO</span><button class="media-close-btn" data-target="photo">X</button></div>
   <div class="media-modal-body">
-    <input type="text" id="photo-url" class="media-input" placeholder="Paste image URL here...">
+    <input type="text" id="photo-url" class="media-input" placeholder="Pega la URL de la imagen…">
   </div>
 </div>
 
@@ -179,12 +269,31 @@
 <div id="chapter-close-modal" class="chapter-modal">
   <div class="chapter-modal-header"><span>CERRAR CAPÍTULO</span></div>
   <div class="chapter-modal-body">
-    <p style="font-size:12px;color:#888;margin:0;">Opcional: deja una nota de cierre para tu yo futuro.</p>
+    <p style="font-size:12px;color:#888;margin:0;">Reflexión opcional para tu yo futuro.</p>
+    <label class="chapter-prompt-label" for="chapter-close-learned">¿Qué aprendiste?</label>
+    <textarea id="chapter-close-learned" placeholder="Aprendizajes…"></textarea>
+    <label class="chapter-prompt-label" for="chapter-close-leave">¿Qué dejas atrás?</label>
+    <textarea id="chapter-close-leave" placeholder="Lo que cierras…"></textarea>
+    <label class="chapter-prompt-label" for="chapter-close-note">Nota libre</label>
     <textarea id="chapter-close-note" placeholder="Nota de cierre (opcional)..."></textarea>
   </div>
   <div class="chapter-modal-actions">
     <button id="chapter-close-cancel" class="chapter-modal-btn" type="button">Cancelar</button>
+    <button id="chapter-close-skip" class="chapter-modal-btn" type="button">Omitir</button>
     <button id="chapter-close-confirm" class="chapter-modal-btn primary" type="button">Cerrar capítulo</button>
+  </div>
+</div>
+
+<div id="chapter-approach-modal" class="chapter-modal">
+  <div class="chapter-modal-header"><span>ACERCARTE AL CAPÍTULO</span></div>
+  <div class="chapter-modal-body">
+    <p style="font-size:12px;color:#888;margin:0;">¿Por qué ahora? (opcional)</p>
+    <textarea id="chapter-approach-note" placeholder="Este capítulo entra en tu presente porque…"></textarea>
+  </div>
+  <div class="chapter-modal-actions">
+    <button id="chapter-approach-cancel" class="chapter-modal-btn" type="button">Cancelar</button>
+    <button id="chapter-approach-skip" class="chapter-modal-btn" type="button">Omitir</button>
+    <button id="chapter-approach-confirm" class="chapter-modal-btn primary" type="button">Acercarme</button>
   </div>
 </div>
 
@@ -200,22 +309,77 @@
   </div>
 </div>
 
-<script src="js/config.js"></script>
-<script src="js/state.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/viewport.js"></script>
-<script src="js/connections.js"></script>
-<script src="js/chapters.js"></script>
-<script src="js/map-tree.js"></script>
-<script src="js/nodes.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/ui-toolbar.js"></script>
-<script src="js/features-markers.js"></script>
-<script src="js/features-documents.js"></script>
-<script src="js/features-media.js"></script>
-<script src="js/automation.js"></script>
-<script src="js/features-automation.js"></script>
-<script src="js/features-chapters.js"></script>
-<script src="js/main.js"></script>
+<div id="keep-modal">
+  <div class="keep-card">
+    <h3 style="margin:0;font-size:13px;letter-spacing:0.1em;">IMPORTAR DESDE KEEP</h3>
+    <textarea id="keep-import-text" style="width:100%;min-height:120px;margin-top:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:8px;box-sizing:border-box;" placeholder="Pega texto Keep (título + líneas con -)"></textarea>
+    <div class="keep-actions">
+      <button type="button" id="keep-modal-close" class="chapter-modal-btn">Cerrar</button>
+      <button type="button" id="keep-import-confirm" class="chapter-modal-btn primary">Importar</button>
+    </div>
+  </div>
+</div>
+
+<div id="onboarding-modal" class="onboarding-modal">
+  <div class="onboarding-card">
+    <div class="onboarding-step active">
+      <h3>Pilas para capturar</h3>
+      <p>Usa <em>sub</em> para soltar ideas sin estructura. Entra con clic derecho → entrar nivel.</p>
+    </div>
+    <div class="onboarding-step">
+      <h3>Profundidad bajo demanda</h3>
+      <p>Cada pila puede contener nodos y más pilas. La barra blanca arriba muestra solo dónde estás ahora.</p>
+    </div>
+    <div class="onboarding-step">
+      <h3>Horizonte en niebla</h3>
+      <p>Los capítulos futuros esperan en niebla hasta que cierres los presentes.</p>
+    </div>
+    <div class="onboarding-actions">
+      <button type="button" id="onboarding-skip" class="onboarding-btn ghost">Omitir</button>
+      <button type="button" id="onboarding-next" class="onboarding-btn primary">Siguiente</button>
+    </div>
+  </div>
+</div>
+
+<div id="load-error-modal" class="load-error-modal">
+  <div class="load-error-card">
+    <h3>Error al cargar</h3>
+    <p id="load-error-message"></p>
+    <div class="load-error-actions">
+      <button type="button" id="load-error-close-btn" class="onboarding-btn ghost">Cerrar</button>
+      <button type="button" id="load-error-import-btn" class="onboarding-btn primary">Restaurar desde archivo</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js?v=24"></script>
+<script src="js/state.js?v=24"></script>
+<script src="js/storage.js?v=24"></script>
+<script src="js/navigation.js?v=24"></script>
+<script src="js/viewport.js?v=24"></script>
+<script src="js/connections.js?v=24"></script>
+<script src="js/chapters.js?v=24"></script>
+<script src="js/map-tree.js?v=24"></script>
+<script src="js/nodes.js?v=24"></script>
+<script src="js/ui.js?v=24"></script>
+<script src="js/ui-toolbar.js?v=24"></script>
+<script src="js/features-data.js?v=24"></script>
+<script src="js/features-onboarding.js?v=24"></script>
+<script src="js/features-search.js?v=24"></script>
+<script src="js/features-view.js?v=24"></script>
+<script src="js/features-edit.js?v=24"></script>
+<script src="js/features-markers.js?v=24"></script>
+<script src="js/features-documents.js?v=24"></script>
+<script src="js/features-media.js?v=24"></script>
+<script src="js/features-archive.js?v=24"></script>
+<script src="js/features-capture.js?v=24"></script>
+<script src="js/features-focus.js?v=24"></script>
+<script src="js/features-shortcuts.js?v=24"></script>
+<script src="js/features-snapshots.js?v=24"></script>
+<script src="js/features-sync.js?v=24"></script>
+<script src="js/features-keep.js?v=24"></script>
+<script src="js/features-regions.js?v=24"></script>
+<script src="js/features-chapters.js?v=24"></script>
+<script src="js/main.js?v=24"></script>
 </body>
 </html>

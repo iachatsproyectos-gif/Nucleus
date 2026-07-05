@@ -24,10 +24,14 @@
 
 .node.chapter-node.phase-fogged {
   opacity: 0.28;
-  filter: blur(6px);
   border: 1px dashed rgba(255, 255, 255, 0.08);
   box-shadow: none;
   position: relative;
+}
+
+.node.chapter-node.phase-fogged .node-header,
+.node.chapter-node.phase-fogged .node-body {
+  filter: blur(6px);
 }
 
 .node.chapter-node.phase-fogged::after {
@@ -48,8 +52,12 @@
 }
 
 .node.chapter-node.phase-fogged:hover {
-  filter: blur(5px);
   opacity: 0.34;
+}
+
+.node.chapter-node.phase-fogged:hover .node-header,
+.node.chapter-node.phase-fogged:hover .node-body {
+  filter: blur(5px);
 }
 
 .node.chapter-node.phase-unlocked {

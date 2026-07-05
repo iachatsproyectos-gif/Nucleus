@@ -80,6 +80,7 @@ body::after {
   overflow: hidden;
   background: #000000;
   z-index: 1;
+  touch-action: none;
 }
 
 #viewport::before {

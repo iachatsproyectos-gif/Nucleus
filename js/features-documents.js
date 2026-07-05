@@ -18,11 +18,12 @@ const renderObserver = new MutationObserver(() => {
   ctx.nodes.forEach(n => {
     if (n.type === 'document') {
       const el = document.querySelector(`.node[data-id="${n.id}"]`);
-      if (el && !el.classList.contains('document-mode')) {
+      if (el && !el.querySelector('.icon-container')) {
         el.classList.add('document-mode');
 
         const header = el.querySelector('.node-header');
         const iconContainer = document.createElement('div');
+        iconContainer.className = 'icon-container';
         iconContainer.innerHTML = '<i data-lucide="file-text" style="width:28px;height:28px;color:var(--dim);pointer-events:none;"></i>';
         header.appendChild(iconContainer);
 

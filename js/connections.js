@@ -5,7 +5,8 @@ function migrateConnection(conn) {
     from: conn.from,
     to: conn.to,
     fromPort: conn.fromPort || 'right',
-    toPort: conn.toPort || 'left'
+    toPort: conn.toPort || 'left',
+    branch: conn.branch || undefined
   };
 }
 
@@ -22,6 +23,14 @@ function migrateNodeTree(nodes) {
 }
 
 function getPortAnchor(node, el, side) {
+  const portEl = el.querySelector(`.port-${side}`);
+  if (portEl) {
+    const nodeRect = el.getBoundingClientRect();
+    const portRect = portEl.getBoundingClientRect();
+    const relX = (portRect.left + portRect.width / 2 - nodeRect.left) / scale;
+    const relY = (portRect.top + portRect.height / 2 - nodeRect.top) / scale;
+    return { x: node.x + relX, y: node.y + relY };
+  }
   const w = el.offsetWidth;
   const h = el.offsetHeight;
   switch (side) {
@@ -37,7 +46,7 @@ function buildConnectionPath(x1, y1, x2, y2, fromPort, toPort) {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const dist = Math.sqrt(dx * dx + dy * dy);
-  const offset = Math.min(80, Math.max(30, dist / 3));
+  const alignThreshold = 4;
 
   const horizontalPair =
     (fromPort === 'right' && toPort === 'left') ||
@@ -45,6 +54,15 @@ function buildConnectionPath(x1, y1, x2, y2, fromPort, toPort) {
   const verticalPair =
     (fromPort === 'bottom' && toPort === 'top') ||
     (fromPort === 'top' && toPort === 'bottom');
+
+  if (horizontalPair && Math.abs(dy) < alignThreshold) {
+    return `M ${x1} ${y1} L ${x2} ${y2}`;
+  }
+  if (verticalPair && Math.abs(dx) < alignThreshold) {
+    return `M ${x1} ${y1} L ${x2} ${y2}`;
+  }
+
+  const offset = dist < 60 ? Math.min(20, dist / 2) : Math.min(80, Math.max(30, dist / 3));
 
   if (horizontalPair) {
     const dir = fromPort === 'right' ? 1 : -1;
@@ -77,8 +95,25 @@ function clearPortHighlights() {
 }
 
 function nodeHasPorts(n) {
-  if (n.type === 'chapter' && n.phase !== 'active') return false;
-  return !['document', 'link', 'photo'].includes(n.type);
+  if (n.type === 'region') return false;
+  if (n.type === 'chapter') {
+    return n.phase === 'active' || n.phase === 'fogged' || n.phase === 'unlocked';
+  }
+  return true;
+}
+
+function isHorizonChapterPhase(n) {
+  return isChapterNode(n) && (n.phase === 'fogged' || n.phase === 'unlocked');
+}
+
+function getHorizonGradientInfo(f, t, a1, a2) {
+  if (isChapterNode(f) && f.phase === 'active' && isHorizonChapterPhase(t)) {
+    return { solid: a1, fade: a2 };
+  }
+  if (isChapterNode(t) && t.phase === 'active' && isHorizonChapterPhase(f)) {
+    return { solid: a2, fade: a1 };
+  }
+  return null;
 }
 
 function buildPortsHTML() {
@@ -124,14 +159,20 @@ function setupPortHandlers(el, n, ctx) {
 }
 
 function drawConnections() {
-  svgLayer.innerHTML = "";
+  svgLayer.innerHTML = '';
   const ctx = getCurrentContext();
   if (!ctx.connections) return;
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  svgLayer.appendChild(defs);
 
   ctx.connections.forEach((conn, index) => {
     const f = ctx.nodes.find(node => node.id === conn.from);
     const t = ctx.nodes.find(node => node.id === conn.to);
     if (!f || !t) return;
+    if (typeof isNodeHiddenByViewFilter === 'function') {
+      if (isNodeHiddenByViewFilter(f) || isNodeHiddenByViewFilter(t)) return;
+    }
 
     const fEl = document.querySelector(`.node[data-id="${f.id}"]`);
     const tEl = document.querySelector(`.node[data-id="${t.id}"]`);
@@ -142,9 +183,34 @@ function drawConnections() {
     const a1 = getPortAnchor(f, fEl, fromPort);
     const a2 = getPortAnchor(t, tEl, toPort);
 
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", buildConnectionPath(a1.x, a1.y, a2.x, a2.y, fromPort, toPort));
-    path.setAttribute("class", "connection-line");
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', buildConnectionPath(a1.x, a1.y, a2.x, a2.y, fromPort, toPort));
+    path.setAttribute('class', 'connection-line');
+    path.dataset.from = f.id;
+    path.dataset.to = t.id;
+
+    const horizon = getHorizonGradientInfo(f, t, a1, a2);
+    if (horizon) {
+      const gradId = 'horizon-grad-' + conn.from + '-' + conn.to + '-' + index;
+      const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+      grad.setAttribute('id', gradId);
+      grad.setAttribute('gradientUnits', 'userSpaceOnUse');
+      grad.setAttribute('x1', horizon.solid.x);
+      grad.setAttribute('y1', horizon.solid.y);
+      grad.setAttribute('x2', horizon.fade.x);
+      grad.setAttribute('y2', horizon.fade.y);
+      const stopA = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+      stopA.setAttribute('offset', '0%');
+      stopA.setAttribute('stop-color', 'rgba(255, 255, 255, 0.42)');
+      const stopB = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+      stopB.setAttribute('offset', '100%');
+      stopB.setAttribute('stop-color', 'rgba(255, 255, 255, 0.04)');
+      grad.appendChild(stopA);
+      grad.appendChild(stopB);
+      defs.appendChild(grad);
+      path.setAttribute('stroke', `url(#${gradId})`);
+      path.setAttribute('class', 'connection-line connection-line-horizon');
+    }
 
     path.oncontextmenu = (e) => {
       e.preventDefault(); e.stopPropagation();
@@ -155,4 +221,5 @@ function drawConnections() {
     };
     svgLayer.appendChild(path);
   });
+  if (typeof updateDependencyHighlights === 'function') updateDependencyHighlights();
 }

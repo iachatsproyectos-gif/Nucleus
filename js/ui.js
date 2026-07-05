@@ -1,5 +1,6 @@
 addSystemBtn.onclick = () => createNode('system');
 addStackBtn.onclick = () => createNode('stack');
+document.getElementById('add-label-btn')?.addEventListener('click', () => createNode('label'));
 undoBtn.onclick = () => undo();
 
 window.addEventListener('keydown', (e) => {
@@ -7,34 +8,28 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     undo();
   }
-  if (e.key === 'Escape' && connectingNode) {
-    connectingNode = null;
-    connectingFromPort = null;
-    clearPortHighlights();
-    drawConnections();
+  if (e.key === 'Escape') {
+    if (connectingNode) {
+      connectingNode = null;
+      connectingFromPort = null;
+      clearPortHighlights();
+      drawConnections();
+    } else if (focusNodeId != null) {
+      clearDependencyFocus();
+    }
   }
 });
 
 document.getElementById("menu-enter").onclick = () => {
-  if (selectedNode && chapterAllowsEnter(selectedNode)) {
-    navigationStack.push(selectedNode);
-    selectedNodeIds.clear();
-    menu.style.display = "none";
-    render();
-  }
+  const target = getContextMenuNode();
+  if (target) enterNavigationLevel(target);
 };
 
 document.getElementById("menu-paint").onclick = () => {
+  const target = getContextMenuNode();
+  if (!target || target.type !== 'stack') return;
   pushUndo();
-  let ctx = getCurrentContext();
-  if (selectedNodeIds.size > 0) {
-    selectedNodeIds.forEach(id => {
-      let n = ctx.nodes.find(x => x.id === id);
-      if (n && n.type === 'stack') n.isPainted = !n.isPainted;
-    });
-  } else if (selectedNode && selectedNode.type === 'stack') {
-    selectedNode.isPainted = !selectedNode.isPainted;
-  }
+  target.isPainted = !target.isPainted;
   saveState(false);
   menu.style.display = "none";
   render();
@@ -43,28 +38,37 @@ document.getElementById("menu-paint").onclick = () => {
 document.getElementById("menu-delete").onclick = () => {
   pushUndo();
   const ctx = getCurrentContext();
-  if (selectedNodeIds.size > 0) {
-    selectedNodeIds.forEach(id => {
-      const nodeIdx = ctx.nodes.findIndex(n => n.id === id);
-      if (nodeIdx > -1) {
-        ctx.nodes.splice(nodeIdx, 1);
-        ctx.connections = ctx.connections.filter(c => c.from !== id && c.to !== id);
-      }
-    });
-    selectedNodeIds.clear();
-  } else if (selectedNode) {
-    const nodeIdx = ctx.nodes.findIndex(n => n.id === selectedNode.id);
+  const deletedIds = [];
+  const menuTarget = getContextMenuNode();
+  const idsToDelete = selectedNodeIds.size > 1
+    ? Array.from(selectedNodeIds)
+    : (menuTarget ? [menuTarget.id] : (selectedNode ? [selectedNode.id] : []));
+
+  idsToDelete.forEach(id => {
+    const nodeIdx = ctx.nodes.findIndex(n => n.id === id);
     if (nodeIdx > -1) {
       ctx.nodes.splice(nodeIdx, 1);
-      ctx.connections = ctx.connections.filter(c => c.from !== selectedNode.id && c.to !== selectedNode.id);
+      ctx.connections = ctx.connections.filter(c => c.from !== id && c.to !== id);
+      deletedIds.push(id);
     }
+  });
+  selectedNodeIds.clear();
+  if (deletedIds.includes(focusNodeId)) clearDependencyFocus();
+  const meta = getAppMeta();
+  if (meta.inboxStackId && deletedIds.includes(meta.inboxStackId)) {
+    delete meta.inboxStackId;
+    saveAppMeta(meta);
   }
   saveState(false);
-  menu.style.display = "none"; render();
+  menu.style.display = "none";
+  contextMenuNode = null;
+  render();
 };
 
-breadcrumb.onclick = () => { if (navigationStack.length > 0) { navigationStack.pop(); selectedNodeIds.clear(); render(); } };
-window.onclick = () => {
+// Clic global: cerrar menú contextual y overlays, excepto interacciones en la topbar
+window.addEventListener('click', (e) => {
+  if (e.target.closest('#app-topbar')) return;
   menu.style.display = "none";
+  contextMenuNode = null;
   if (typeof closeAllOverlays === 'function') closeAllOverlays();
-};
+});

@@ -47,27 +47,44 @@
   line-height: 1;
 }
 
-#breadcrumb {
+#location-wrap {
+  flex: 0 0 auto;
+  width: min(168px, 24vw);
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.location-input,
+#location-label {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   color: #000;
   background: #ffffff;
-  cursor: pointer;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 7px 22px 7px 16px;
-  flex-shrink: 0;
-  white-space: nowrap;
+  padding: 7px 12px;
   border: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  cursor: pointer;
   box-shadow:
     0 0 40px rgba(255, 255, 255, 0.12),
     0 0 2px rgba(255, 255, 255, 0.8);
   filter: blur(0.2px);
+  pointer-events: none;
+}
+
+#location-wrap {
   position: relative;
 }
 
-#breadcrumb::after {
+#location-wrap::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -75,17 +92,13 @@
   pointer-events: none;
 }
 
+#breadcrumb,
 #breadcrumb-prompt {
-  color: rgba(0, 0, 0, 0.35);
-  font-weight: 400;
-  font-style: italic;
-  letter-spacing: 0;
-  text-transform: lowercase;
-  font-size: 14px;
+  display: none !important;
 }
 
 #ui-layer {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   gap: 4px;
   align-items: center;
@@ -312,4 +325,30 @@
 .help-panel-body {
   overflow-y: auto;
   padding: 8px 0 20px;
+}
+
+@media (max-width: 768px) {
+  #app-topbar {
+    padding: 10px 12px 8px 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #ui-layer {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: calc(100vw - 24px);
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mini-btn-compact {
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+
+  #location-wrap {
+    width: min(140px, 36vw);
+  }
 }

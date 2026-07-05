@@ -68,13 +68,14 @@ function createChapter(phase = 'active', lockedUntil = []) {
   const count = ctx.nodes.filter(n => isChapterNode(n)).length + 1;
 
   const node = {
-    id: Date.now(),
+    id: generateNodeId(),
     x: x - 120,
     y: y - 40,
     type: 'chapter',
     phase: phase,
     lockedUntil: lockedUntil.slice(),
     closureNote: '',
+    approachNote: '',
     closedAt: null,
     title: phase === 'fogged' ? `HORIZONTE_${count}` : `CAPITULO_${count}`,
     mode: 'text',
@@ -105,11 +106,12 @@ function closeChapter(node, closureNote = '') {
   return unlocked;
 }
 
-function approachChapter(node) {
+function approachChapter(node, approachNote) {
   if (!isChapterNode(node) || node.phase !== 'unlocked') return;
 
   pushUndo();
   node.phase = 'active';
+  if (approachNote !== undefined) node.approachNote = approachNote || '';
   saveState(false);
   render();
   showChapterToast('Ya estás lo bastante cerca. Este capítulo es tuyo ahora.');
@@ -132,6 +134,7 @@ function setChapterPrereqs(node, lockedUntil) {
   if (node.phase === 'fogged' && arePrereqsMet(node, getCurrentContext())) {
     node.phase = 'unlocked';
     showChapterToast(`Un capítulo en el horizonte toma forma: ${node.title}`);
+    notifyHorizonUnlock(node);
   }
   saveState(false);
   render();
@@ -147,8 +150,18 @@ function checkUnlocks(ctx) {
   });
   unlocked.forEach(n => {
     showChapterToast(`Un capítulo en el horizonte toma forma: ${n.title}`);
+    notifyHorizonUnlock(n);
   });
   return unlocked;
+}
+
+function notifyHorizonUnlock(node) {
+  if (!node || !window.Notification || Notification.permission !== 'granted') return;
+  try {
+    new Notification('Nucleus — Horizonte', {
+      body: `"${node.title || 'Capítulo'}" ya está disponible en el horizonte.`
+    });
+  } catch (_) { /* ignore */ }
 }
 
 function getChaptersInContext(ctx) {
@@ -195,7 +208,7 @@ function updateChapterContextMenu(n) {
   const horizon = document.getElementById('menu-send-horizon');
   const prereqs = document.getElementById('menu-prereqs');
 
-  enter.style.display = (!isCh || chapterAllowsEnter(n)) ? 'block' : 'none';
+  enter.style.display = nodeAllowsEnter(n) ? 'block' : 'none';
   approach.style.display = (isCh && n.phase === 'unlocked') ? 'block' : 'none';
   closeCh.style.display = (isCh && n.phase === 'active') ? 'block' : 'none';
   horizon.style.display = (isCh && n.phase === 'active') ? 'block' : 'none';

@@ -1,0 +1,150 @@
+#empty-state-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.55) 0%, transparent 70%);
+}
+
+#empty-state-overlay.visible {
+  display: flex;
+}
+
+.empty-state-inner {
+  pointer-events: all;
+  text-align: center;
+  max-width: 420px;
+  padding: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: var(--blur-panel);
+}
+
+.empty-state-inner h2 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.empty-state-inner p {
+  margin: 0 0 20px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dim);
+  text-transform: none;
+}
+
+.empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.empty-state-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.empty-state-btn:hover {
+  background: #fff;
+  color: #000;
+}
+
+.onboarding-modal,
+.load-error-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+}
+
+.onboarding-modal.visible,
+.load-error-modal.visible {
+  display: flex;
+}
+
+.onboarding-card,
+.load-error-card {
+  width: min(440px, 92vw);
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.95);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.9);
+}
+
+.onboarding-step {
+  display: none;
+}
+
+.onboarding-step.active {
+  display: block;
+}
+
+.onboarding-step h3,
+.load-error-card h3 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.onboarding-step p,
+.load-error-card p {
+  margin: 0 0 20px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dim);
+  text-transform: none;
+}
+
+.onboarding-actions,
+.load-error-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.onboarding-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 8px 16px;
+  cursor: pointer;
+  text-transform: lowercase;
+}
+
+.onboarding-btn.primary {
+  background: #fff;
+  color: #000;
+  border-color: #fff;
+}
+
+.onboarding-btn.ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}

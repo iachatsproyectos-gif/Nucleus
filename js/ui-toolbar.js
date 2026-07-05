@@ -13,23 +13,35 @@ function closeHelpPanel() {
 function closeAllOverlays() {
   closeAllDropdowns();
   closeHelpPanel();
+  ['search-panel', 'archive-panel', 'sync-panel', 'snapshots-panel'].forEach(id => {
+    const panel = document.getElementById(id);
+    if (panel?.classList.contains('open')) {
+      panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+    }
+  });
 }
 
 function initToolbar() {
-  document.querySelectorAll('.ui-dropdown-wrap').forEach(wrap => {
-    const toggle = wrap.querySelector('.ui-cluster-toggle');
-    if (!toggle) return;
+  const uiLayer = document.getElementById('ui-layer');
+  if (!uiLayer || uiLayer.dataset.toolbarBound) return;
+  uiLayer.dataset.toolbarBound = '1';
 
-    toggle.addEventListener('click', (e) => {
+  uiLayer.addEventListener('click', (e) => {
+    const toggle = e.target.closest('.ui-cluster-toggle');
+    if (toggle && uiLayer.contains(toggle)) {
       e.stopPropagation();
+      const wrap = toggle.closest('.ui-dropdown-wrap');
+      if (!wrap) return;
       const wasOpen = wrap.classList.contains('open');
       closeAllOverlays();
       if (!wasOpen) wrap.classList.add('open');
-    });
-  });
+      return;
+    }
 
-  document.getElementById('ui-layer').addEventListener('click', (e) => {
-    if (e.target.closest('.dropdown-item')) {
+    const item = e.target.closest('.dropdown-item');
+    if (item && uiLayer.contains(item)) {
+      e.stopPropagation();
       closeAllDropdowns();
     }
   });

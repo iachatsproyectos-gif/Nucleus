@@ -14,7 +14,19 @@ viewport.addEventListener("wheel", (e) => {
 }, { passive: false });
 
 viewport.addEventListener("mousedown", (e) => {
-  if (e.target === viewport && e.shiftKey && e.button === 0) {
+  const hitNode = e.target.closest('.node');
+  const hitRegionLabel = e.target.closest('.map-region-label');
+  const hitRegionHandle = e.target.closest('.map-region-handle');
+  const hitPort = e.target.closest('.port');
+  const hitLine = e.target.classList?.contains('connection-line');
+  const onCanvas = e.target.closest('#viewport');
+  const backgroundClick = onCanvas && !hitNode && !hitRegionLabel && !hitRegionHandle && !hitPort && !hitLine;
+
+  if (backgroundClick && e.button === 0 && !e.shiftKey) {
+    dismissDependencyFocusOnBackgroundClick(e);
+  }
+
+  if (backgroundClick && e.shiftKey && e.button === 0) {
     isBoxSelecting = true;
     startSelX = e.clientX; startSelY = e.clientY;
     initialSelection = new Set(selectedNodeIds);
@@ -23,16 +35,21 @@ viewport.addEventListener("mousedown", (e) => {
     selectionBoxElement.style.top = startSelY + 'px';
     selectionBoxElement.style.width = '0px';
     selectionBoxElement.style.height = '0px';
-  } else if (e.target === viewport || e.button === 1) {
-    if (!e.shiftKey) {
-      isPanning = true;
-      startPanX = e.clientX - offsetX;
-      startPanY = e.clientY - offsetY;
-      selectedNodeIds.clear();
-      updateSelectionVisuals();
-    }
+  } else if (backgroundClick && e.button === 0 && !e.shiftKey) {
+    isPanning = true;
+    startPanX = e.clientX - offsetX;
+    startPanY = e.clientY - offsetY;
+  } else if (onCanvas && e.button === 1) {
+    isPanning = true;
+    startPanX = e.clientX - offsetX;
+    startPanY = e.clientY - offsetY;
+    dismissDependencyFocusOnBackgroundClick(e);
   }
 });
+
+window.addEventListener('mousedown', (e) => {
+  dismissDependencyFocusOnBackgroundClick(e);
+}, true);
 
 window.addEventListener("mousemove", (e) => {
   if (isPanning) {
@@ -78,4 +95,62 @@ window.addEventListener("mouseup", () => {
     isBoxSelecting = false;
     selectionBoxElement.style.display = 'none';
   }
+});
+
+let touchPanning = false;
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartOffsetX = 0;
+let touchStartOffsetY = 0;
+let pinchStartDist = 0;
+let pinchStartScale = 1;
+
+function touchDistance(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function touchMidpoint(touches) {
+  return {
+    x: (touches[0].clientX + touches[1].clientX) / 2,
+    y: (touches[0].clientY + touches[1].clientY) / 2
+  };
+}
+
+viewport.addEventListener('touchstart', (e) => {
+  if (e.target !== viewport && !e.target.closest('#workspace')) return;
+  if (e.touches.length === 1) {
+    touchPanning = true;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartOffsetX = offsetX;
+    touchStartOffsetY = offsetY;
+  } else if (e.touches.length === 2) {
+    touchPanning = false;
+    pinchStartDist = touchDistance(e.touches);
+    pinchStartScale = scale;
+  }
+}, { passive: false });
+
+viewport.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 1 && touchPanning) {
+    e.preventDefault();
+    offsetX = touchStartOffsetX + (e.touches[0].clientX - touchStartX);
+    offsetY = touchStartOffsetY + (e.touches[0].clientY - touchStartY);
+    updateTransform();
+  } else if (e.touches.length === 2 && pinchStartDist > 0) {
+    e.preventDefault();
+    const mid = touchMidpoint(e.touches);
+    const oldScale = scale;
+    scale = Math.min(Math.max(pinchStartScale * (touchDistance(e.touches) / pinchStartDist), 0.2), 2.5);
+    offsetX -= (mid.x - offsetX) * (scale / oldScale - 1);
+    offsetY -= (mid.y - offsetY) * (scale / oldScale - 1);
+    updateTransform();
+  }
+}, { passive: false });
+
+viewport.addEventListener('touchend', (e) => {
+  touchPanning = false;
+  if (e.touches.length < 2) pinchStartDist = 0;
 });
