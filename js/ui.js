@@ -1,7 +1,7 @@
-addSystemBtn.onclick = () => createNode('system');
-addStackBtn.onclick = () => createNode('stack');
-document.getElementById('add-label-btn')?.addEventListener('click', () => createNode('label'));
-undoBtn.onclick = () => undo();
+if (addSystemBtn) addSystemBtn.onclick = () => createNode('system');
+if (addStackBtn) addStackBtn.onclick = () => createNode('stack');
+if (undoBtn) undoBtn.onclick = () => undo();
+document.getElementById('add-label-btn')?.addEventListener('click', () => createTituloNode());
 
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.key === 'z') {
@@ -9,7 +9,9 @@ window.addEventListener('keydown', (e) => {
     undo();
   }
   if (e.key === 'Escape') {
-    if (connectingNode) {
+    if (portDragging) {
+      cancelPortDrag();
+    } else if (connectingNode) {
       connectingNode = null;
       connectingFromPort = null;
       clearPortHighlights();
@@ -65,9 +67,11 @@ document.getElementById("menu-delete").onclick = () => {
   render();
 };
 
-// Clic global: cerrar menú contextual y overlays, excepto interacciones en la topbar
+// Clic global: cerrar menú contextual y overlays
 window.addEventListener('click', (e) => {
   if (e.target.closest('#app-topbar')) return;
+  if (e.target.closest('#nucleus-hub')) return;
+  if (e.target.closest('.nucleus-fab')) return;
   menu.style.display = "none";
   contextMenuNode = null;
   if (typeof closeAllOverlays === 'function') closeAllOverlays();

@@ -13,20 +13,14 @@ function runInits() {
   initMarkers();
   initDocuments();
   initMedia();
-  initChapters();
-  initArchiveFeatures();
   initCaptureFeatures();
-  initFocusFeatures();
   initShortcutFeatures();
-  initSnapshotFeatures();
-  initSyncFeatures();
-  initKeepFeatures();
   initRegionsFeatures();
-  initDataFeatures();
-  initMultiMapFeatures();
   initOnboarding();
   initSearchFeatures();
-  initViewFeatures();
+  initDailyChecklist();
+  initBackupFeatures();
+  initNucleusHub();
   initEditFeatures();
 
   loadState();
@@ -35,6 +29,7 @@ function runInits() {
   syncLocationNameFromStack();
   updateTransform();
   render();
+  if (typeof updateNodeCount === 'function') updateNodeCount();
   lucide.createIcons();
 }
 

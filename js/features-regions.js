@@ -40,8 +40,6 @@ function syncRegionFrame(frame, n) {
 }
 
 function bindRegionHandlers(frame, n, ctx) {
-  if (isChapterReadOnlyContext()) return;
-
   frame.querySelectorAll('.map-region-handle').forEach(handleEl => {
     handleEl.onmousedown = (e) => {
       e.stopPropagation();
@@ -146,13 +144,8 @@ function bindRegionHandlers(frame, n, ctx) {
     selectedNodeIds.add(n.id);
     updateSelectionVisuals();
     document.getElementById('menu-paint').style.display = 'none';
-    const promoteEl = document.getElementById('menu-promote-chapter');
-    if (promoteEl) promoteEl.style.display = 'none';
     const expandEl = document.getElementById('menu-expand-list');
     if (expandEl) expandEl.style.display = 'none';
-    const keepEl = document.getElementById('menu-export-keep');
-    if (keepEl) keepEl.style.display = 'none';
-    updateChapterContextMenu(n);
     menu.style.left = e.clientX + 'px';
     menu.style.top = e.clientY + 'px';
     menu.style.display = 'block';

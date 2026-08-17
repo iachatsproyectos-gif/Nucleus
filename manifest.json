@@ -1,8 +1,10 @@
 {
   "name": "Nucleus",
   "short_name": "Nucleus",
+  "id": "./",
   "description": "Organizador mental espacial",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

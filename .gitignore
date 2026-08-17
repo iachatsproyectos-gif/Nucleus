@@ -4,3 +4,14 @@
 .env.*
 server/node_modules/
 server/nucleus.db
+node_modules/
+www/
+android/
+.gradle/
+.idea/
+*.apk
+.local/android-sdk/
+.tunnel.log
+.server.log
+.lt.log
+.bin/

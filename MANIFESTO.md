@@ -1,16 +1,14 @@
 # Manifiesto Nucleus
 
-Nucleus es un entorno virtual para pensar tu vida en espacio — conectar ideas, explorar presente y futuro, y solo cuando tú decidas, convertir claridad en acción.
+Nucleus es un entorno para pensar en espacio: conectar ideas, explorar niveles de profundidad y ordenar claridad sin presión por productividad.
 
 ## Principios
 
-1. **Claridad antes que cumplimiento** — El valor principal es entender. Las acciones vienen después.
+1. **Claridad antes que cumplimiento** — Entender primero; actuar después, si quieres.
 2. **Espacio, no filas** — Mapas, niveles y conexiones; no checklists infinitas.
-3. **Eventos y capítulos, no tareas sueltas** — Contenedores existenciales, no errands.
-4. **Presente y futuro como narrativa** — HOME es el ahora; la niebla guarda lo que aún no es el momento.
-5. **Automatización como puente voluntario** — Solo cuando tú cableas el flujo.
-6. **Ligereza en captura, profundidad bajo demanda** — Pilas para soltar ideas; niveles para desarrollarlas.
-7. **Tu mapa es tuyo** — Sin gamificación punitiva ni presión por productividad.
+3. **Contenedores, no errands sueltos** — Subs y nodos agrupan pensamiento, no tareas aisladas.
+4. **Profundidad bajo demanda** — Captura ligera en la superficie; detalle al entrar en un nivel.
+5. **Tu mapa es tuyo** — Sin gamificación punitiva ni culpa por no “vaciar” nada.
 
 ## Nucleus no será
 
@@ -22,5 +20,6 @@ Nucleus es un entorno virtual para pensar tu vida en espacio — conectar ideas,
 ## Nucleus sí será
 
 - Entorno para pensar en espacio
-- Capítulos con horizonte en niebla
-- Acción opcional cuando hay claridad
+- Navegación por niveles dentro del mapa
+- Conexiones visibles entre ideas
+- Respaldo local cuando tú lo decidas

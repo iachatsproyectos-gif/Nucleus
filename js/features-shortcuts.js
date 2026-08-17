@@ -21,7 +21,7 @@ function initShortcutFeatures() {
   window.addEventListener('keydown', (e) => {
     if (typeof isTypingInInput === 'function' && isTypingInInput()) return;
 
-    if (e.key === 'Backspace' && !e.ctrlKey && !e.metaKey) {
+    if (e.key === 'Backspace' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       if (navigationStack.length > 0) {
         e.preventDefault();
         exitNavigationLevel();

@@ -63,42 +63,32 @@ function openMediaModal(node, type) {
   document.getElementById(`${type}-url`).focus();
 }
 
-const mediaObserver = new MutationObserver(() => {
-  const ctx = getCurrentContext();
-  let refreshIcons = false;
+function setupMediaNode(el, n, ctx) {
+  el.classList.add(`${n.type}-mode`);
+  const header = el.querySelector('.node-header');
+  if (!header || header.querySelector('.icon-container')) return false;
 
-  ctx.nodes.forEach(n => {
-    if (n.type === 'link' || n.type === 'photo') {
-      const el = document.querySelector(`.node[data-id="${n.id}"]`);
-      if (el && !el.querySelector('.icon-container')) {
-        el.classList.add(`${n.type}-mode`);
-        const header = el.querySelector('.node-header');
+  const iconContainer = document.createElement('div');
+  iconContainer.className = 'icon-container';
 
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'icon-container';
+  if (n.type === 'link') {
+    iconContainer.innerHTML = buildLinkIconHTML(n.content);
+    iconContainer.querySelectorAll('.link-favicon').forEach(img => {
+      img.onerror = () => {
+        iconContainer.innerHTML = '<i data-lucide="link" style="width:28px;height:28px;color:var(--dim);pointer-events:none;"></i>';
+        lucide.createIcons({ root: header });
+      };
+    });
+    el.ondblclick = (e) => { e.stopPropagation(); openMediaModal(n, 'link'); };
+  } else if (n.type === 'photo') {
+    iconContainer.innerHTML = buildPhotoIconHTML(n.content);
+    el.ondblclick = (e) => { e.stopPropagation(); openMediaModal(n, 'photo'); };
+  }
 
-        if (n.type === 'link') {
-          iconContainer.innerHTML = buildLinkIconHTML(n.content);
-          iconContainer.querySelectorAll('.link-favicon').forEach(img => {
-            img.onerror = () => {
-              iconContainer.innerHTML = '<i data-lucide="link" style="width:28px;height:28px;color:var(--dim);pointer-events:none;"></i>';
-              lucide.createIcons({ root: header });
-            };
-          });
-          el.ondblclick = (e) => { e.stopPropagation(); openMediaModal(n, 'link'); };
-        } else if (n.type === 'photo') {
-          iconContainer.innerHTML = buildPhotoIconHTML(n.content);
-          el.ondblclick = (e) => { e.stopPropagation(); openMediaModal(n, 'photo'); };
-        }
-
-        header.appendChild(iconContainer);
-        bindNodeDragAndFocus(iconContainer, n, ctx, { iconOnly: true });
-        refreshIcons = true;
-      }
-    }
-  });
-  if (refreshIcons) lucide.createIcons();
-});
+  header.appendChild(iconContainer);
+  bindNodeDragAndFocus(iconContainer, n, ctx, { iconOnly: true });
+  return true;
+}
 
 function initMedia() {
   document.getElementById('add-link-btn').onclick = () => createNode('link');
@@ -131,8 +121,6 @@ function initMedia() {
     const url = document.getElementById('link-url').value;
     if (url) window.open(normalizeLinkUrl(url), '_blank', 'noopener,noreferrer');
   };
-
-  mediaObserver.observe(nodesLayer, { childList: true });
 
   document.addEventListener('paste', async (e) => {
     const items = e.clipboardData?.items;

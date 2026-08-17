@@ -63,8 +63,9 @@ function purgeAutomationNodes() {
   saveState(false);
 }
 
+
 function showAppToast(message, duration = 4000) {
-  const el = document.getElementById('chapter-toast');
+  const el = document.getElementById('app-toast');
   if (!el) return;
   el.textContent = message;
   el.classList.add('visible');
@@ -87,12 +88,6 @@ function saveMapsIndex(index) {
 function getCurrentMapId() {
   const meta = getAppMeta();
   return meta.currentMapId || 'default';
-}
-
-function getCurrentMapName() {
-  const idx = getMapsIndex();
-  const id = getCurrentMapId();
-  return idx.find(m => m.id === id)?.name || 'Mapa principal';
 }
 
 function ensureMapsIndex() {
@@ -174,27 +169,37 @@ function saveState(shouldPushUndo = true) {
   try {
     persistToStorage();
   } catch (e) {
-    showAppToast('No se pudo guardar: almacenamiento lleno. Exporta tu mapa.', 6000);
-    if (typeof showLoadErrorModal === 'function') {
-      showLoadErrorModal('Almacenamiento lleno. Exporta una copia de seguridad antes de continuar.');
-    }
+    showAppToast('No se pudo guardar: almacenamiento lleno.', 6000);
   }
 }
 
 function migrateNodeFields(n) {
-  if (isChapterNode(n)) {
-    if (n.approachNote === undefined) n.approachNote = '';
-    if (n.closureNote === undefined) n.closureNote = '';
+  if (n.type === 'label') {
+    n.type = 'titulo';
+    if (!n.content && n.title) n.content = n.title;
+  }
+  if (n.type === 'chapter') {
+    n.type = 'stack';
+    delete n.phase;
+    delete n.lockedUntil;
+    delete n.closureNote;
+    delete n.closedAt;
+    delete n.approachNote;
+  }
+  if (n.isInbox) {
+    delete n.isInbox;
   }
   if (n.lifeTag === undefined) n.lifeTag = 'none';
+  if (n.type === 'stack' && !Array.isArray(n.connections)) n.connections = [];
+  if (!Array.isArray(n.subNodes)) n.subNodes = [];
   if (n.subNodes && n.subNodes.length) n.subNodes.forEach(migrateNodeFields);
 }
 
 function migrateStorageData(data) {
-  if (!data.version) {
-    return { rootNodes: data.rootNodes || [], rootConnections: data.rootConnections || [] };
-  }
-  return { rootNodes: data.rootNodes || [], rootConnections: data.rootConnections || [] };
+  return {
+    rootNodes: data.rootNodes || [],
+    rootConnections: data.rootConnections || []
+  };
 }
 
 function applyMapData(data, skipUndo = false) {
@@ -239,107 +244,6 @@ function loadState() {
   } catch (e) {
     rootNodes = [];
     rootConnections = [];
-    if (typeof showLoadErrorModal === 'function') {
-      showLoadErrorModal('No se pudo leer el mapa guardado. Puedes restaurar desde un archivo exportado.');
-    } else {
-      showAppToast('Error al cargar el mapa guardado.', 6000);
-    }
+    showAppToast('Error al cargar el mapa guardado.', 6000);
   }
-}
-
-function switchMap(mapId) {
-  persistToStorage();
-  const meta = getAppMeta();
-  meta.currentMapId = mapId;
-  saveAppMeta(meta);
-  navigationStack = [];
-  undoHistory = [];
-  currentLocationName = 'HOME';
-  loadState();
-  syncLocationNameFromStack();
-  render();
-  if (typeof updateMapSelector === 'function') updateMapSelector();
-  showAppToast('Mapa: ' + getCurrentMapName());
-}
-
-function createNewMap(name) {
-  const id = 'map_' + generateNodeId();
-  const index = getMapsIndex();
-  index.push({ id, name: name || 'Nuevo mapa', updatedAt: new Date().toISOString() });
-  saveMapsIndex(index);
-  const payload = { version: STORAGE_VERSION, rootNodes: [], rootConnections: [] };
-  localStorage.setItem(mapStorageKey(id), JSON.stringify(payload));
-  switchMap(id);
-}
-
-function renameCurrentMap(name) {
-  const index = getMapsIndex();
-  const entry = index.find(m => m.id === getCurrentMapId());
-  if (entry && name) {
-    entry.name = name;
-    saveMapsIndex(index);
-    if (typeof updateMapSelector === 'function') updateMapSelector();
-  }
-}
-
-function deleteCurrentMap() {
-  const index = getMapsIndex();
-  if (index.length <= 1) {
-    showAppToast('Debe quedar al menos un mapa.');
-    return;
-  }
-  const id = getCurrentMapId();
-  localStorage.removeItem(mapStorageKey(id));
-  const newIndex = index.filter(m => m.id !== id);
-  saveMapsIndex(newIndex);
-  switchMap(newIndex[0].id);
-}
-
-function exportMapToFile() {
-  const payload = {
-    version: STORAGE_VERSION,
-    exportedAt: new Date().toISOString(),
-    mapName: getCurrentMapName(),
-    rootNodes,
-    rootConnections
-  };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const date = new Date().toISOString().slice(0, 10);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `nucleus-${getCurrentMapId()}-${date}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  showAppToast('Mapa exportado.');
-}
-
-function updateMapSelector() {
-  const sel = document.getElementById('map-selector');
-  if (!sel) return;
-  const index = getMapsIndex();
-  const current = getCurrentMapId();
-  sel.innerHTML = index.map(m =>
-    `<option value="${m.id}" ${m.id === current ? 'selected' : ''}>${escapeMapSelectLabel(m.name)}</option>`
-  ).join('');
-}
-
-function initMultiMapFeatures() {
-  ensureMapsIndex();
-  updateMapSelector();
-  const sel = document.getElementById('map-selector');
-  const newBtn = document.getElementById('map-new-btn');
-  const renameBtn = document.getElementById('map-rename-btn');
-  const delBtn = document.getElementById('map-delete-btn');
-  if (sel) sel.onchange = () => switchMap(sel.value);
-  if (newBtn) newBtn.onclick = () => {
-    const name = prompt('Nombre del nuevo mapa:', 'Nuevo mapa');
-    if (name !== null) createNewMap(name.trim() || 'Nuevo mapa');
-  };
-  if (renameBtn) renameBtn.onclick = () => {
-    const name = prompt('Renombrar mapa:', getCurrentMapName());
-    if (name !== null) renameCurrentMap(name.trim());
-  };
-  if (delBtn) delBtn.onclick = () => {
-    if (confirm('¿Eliminar este mapa? No se puede deshacer.')) deleteCurrentMap();
-  };
 }

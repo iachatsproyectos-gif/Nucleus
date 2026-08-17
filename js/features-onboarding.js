@@ -16,14 +16,6 @@ function initOnboarding() {
     createNode('system');
     updateEmptyState();
   });
-  document.getElementById('empty-add-horizon')?.addEventListener('click', () => {
-    if (typeof openPrereqsModalForNewHorizon === 'function') {
-      openPrereqsModalForNewHorizon();
-    } else {
-      createChapter('fogged');
-    }
-    updateEmptyState();
-  });
 
   const modal = document.getElementById('onboarding-modal');
   if (!modal) return;

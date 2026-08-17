@@ -1,18 +1,3 @@
-function promoteStackToChapter(stack) {
-  if (!stack || stack.type !== 'stack') return;
-  pushUndo();
-  stack.type = 'chapter';
-  stack.phase = 'active';
-  stack.lockedUntil = stack.lockedUntil || [];
-  stack.closureNote = stack.closureNote || '';
-  stack.closedAt = null;
-  stack.approachNote = stack.approachNote || '';
-  if (!stack.title) stack.title = 'CAPITULO_NUEVO';
-  saveState(false);
-  render();
-  showChapterToast('Pila promovida a capítulo activo.');
-}
-
 function expandListToSubStacks(node) {
   if (!node || (node.mode !== 'list' && node.mode !== 'check')) return;
   pushUndo();
@@ -39,15 +24,6 @@ function expandListToSubStacks(node) {
 }
 
 function initCaptureFeatures() {
-  const promoteBtn = document.getElementById('menu-promote-chapter');
-  if (promoteBtn) promoteBtn.onclick = () => {
-    const target = getContextMenuNode();
-    if (target && target.type === 'stack') {
-      promoteStackToChapter(target);
-      menu.style.display = 'none';
-    }
-  };
-
   const expandBtn = document.getElementById('menu-expand-list');
   if (expandBtn) expandBtn.onclick = () => {
     const target = getContextMenuNode();

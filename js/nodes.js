@@ -9,7 +9,7 @@ function createNode(type = 'system') {
     x: x - 120,
     y: y - 40,
     type: type,
-    title: (type === 'stack' || type === 'label') ? '' : ('OPTION_NODE_' + (ctx.nodes.length + 1)),
+    title: type === 'stack' ? '' : ('OPTION_NODE_' + (ctx.nodes.length + 1)),
     mode: 'text',
     content: '',
     items: [{ text: '', checked: false }],
@@ -26,14 +26,16 @@ function createNode(type = 'system') {
 function autoResize(textarea) {
   textarea.style.height = 'auto';
   textarea.style.height = textarea.scrollHeight + 'px';
+  scheduleDrawConnections({ skipHighlights: true });
 }
 
 function bindNodeDragAndFocus(pointerEl, n, ctx, opts = {}) {
   pointerEl.onmousedown = (e) => {
     if (e.target.classList.contains('port')) return;
-    if ((n.type === 'stack' || n.type === 'label') && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) return;
+    if ((n.type === 'stack') && (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT')) return;
     if (opts.header && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
     if (opts.mediaTitle && e.target.classList.contains('title-input')) return;
+    if (shouldPanOverNode(n.id)) return;
     pushUndo();
 
     let isDraggingNode = false;
@@ -65,7 +67,7 @@ function bindNodeDragAndFocus(pointerEl, n, ctx, opts = {}) {
           if (nodeEl) { nodeEl.style.left = node.x + 'px'; nodeEl.style.top = node.y + 'px'; }
         }
       });
-      drawConnections();
+      scheduleDrawConnections({ skipHighlights: true });
     };
 
     document.addEventListener('mousemove', move);
@@ -109,6 +111,36 @@ function buildListItemHTML(n, item, i, total) {
     </div>`;
 }
 
+function bindListModeHandlers(el, n) {
+  el.querySelectorAll('.list-input').forEach(inp => {
+    inp.oninput = (e) => { n.items[e.target.dataset.idx].text = e.target.value; saveState(false); };
+    inp.onblur = () => saveState(true);
+  });
+  if (n.mode === 'check') {
+    el.querySelectorAll('.check-box').forEach(cb => cb.onchange = (e) => {
+      pushUndo();
+      n.items[e.target.dataset.idx].checked = e.target.checked;
+      saveState(false);
+    });
+  }
+  bindListItemActions(el, n);
+  const addItem = el.querySelector('.add-item');
+  if (addItem) addItem.onclick = () => {
+    pushUndo();
+    n.items.push({ text: '', checked: false });
+    refreshNodeListBody(el, n);
+    saveState(false);
+  };
+}
+
+function refreshNodeListBody(el, n) {
+  const body = el.querySelector('.node-body');
+  if (!body) return;
+  body.innerHTML = n.items.map((item, i) => buildListItemHTML(n, item, i, n.items.length)).join('')
+    + '<div class="add-item">+ añadir ítem</div>';
+  bindListModeHandlers(el, n);
+}
+
 function bindListItemActions(el, n) {
   el.querySelectorAll('.list-item-btn').forEach(btn => {
     btn.onclick = (e) => {
@@ -129,7 +161,7 @@ function bindListItemActions(el, n) {
         n.items.splice(idx, 1);
         if (!n.items.length) n.items.push({ text: '', checked: false });
       }
-      render();
+      refreshNodeListBody(el, n);
       saveState(false);
     };
   });
@@ -137,60 +169,61 @@ function bindListItemActions(el, n) {
 
 function render() {
   nodesLayer.innerHTML = '';
+  _lastHoveredNodeId = null;
   const ctx = getCurrentContext();
   updateBreadcrumb();
 
+  const visibleRect = getVisibleWorldRect();
+  const useCulling = ctx.nodes.length >= 50;
+  const fragment = document.createDocumentFragment();
+  let needsLucide = false;
+
   ctx.nodes.forEach(n => {
     if (n.type && String(n.type).startsWith('auto-')) return;
-    if (isNodeHiddenByViewFilter(n)) return;
+
+    if (n.type === 'titulo') {
+      if (!useCulling || nodeIntersectsRect(n, visibleRect)) {
+        const tituloEl = renderTituloNode(n, ctx, false);
+        if (tituloEl) fragment.appendChild(tituloEl);
+      }
+      return;
+    }
     if (n.type === 'region') {
+      if (useCulling && !nodeIntersectsRect(n, visibleRect)) return;
       const frame = document.createElement('div');
       frame.className = 'map-region';
       frame.dataset.regionId = n.id;
       syncRegionFrame(frame, n);
       frame.innerHTML = buildRegionHTML(n);
       bindRegionHandlers(frame, n, ctx);
-      nodesLayer.appendChild(frame);
+      fragment.appendChild(frame);
       return;
     }
+
+    if (useCulling && !nodeIntersectsRect(n, visibleRect)) return;
+
     const el = document.createElement('div');
-    const chapter = isChapterNode(n);
-    const readOnly = isChapterReadOnlyContext();
-    const isLabel = n.type === 'label';
     el.className = [
       'node',
       n.type === 'stack' ? 'stack-mode' : '',
-      isLabel ? 'label-mode' : '',
       n.type === 'document' ? 'document-mode' : '',
       n.type === 'link' ? 'link-mode' : '',
       n.type === 'photo' ? 'photo-mode' : '',
       n.isPainted ? 'is-painted' : '',
-      chapter ? 'chapter-node phase-' + (n.phase || 'active') : '',
       n.lifeTag && n.lifeTag !== 'none' ? 'life-tag-' + n.lifeTag : ''
     ].filter(Boolean).join(' ');
     el.dataset.id = n.id;
     el.style.left = n.x + 'px';
     el.style.top = n.y + 'px';
 
-    if (chapter && n.phase === 'fogged' && n.lockedUntil && n.lockedUntil.length) {
-      const labels = getPrereqLabels(n, ctx);
-      if (labels.length) el.title = `Prerequisitos: ${labels.join(', ')}`;
-    }
-
-    const ro = new ResizeObserver(() => drawConnections());
+    const ro = new ResizeObserver(() => scheduleDrawConnections({ skipHighlights: true }));
     ro.observe(el);
 
     let bodyHTML = '';
     let footerHTML = '';
     let headerHTML = '';
 
-    if (chapter) {
-      bodyHTML = buildChapterBodyHTML(n, ctx);
-      headerHTML = `<div class="node-header"><input type="text" class="title-input" value="${n.title}"></div>`;
-    } else if (isLabel) {
-      const styleAttr = n.w ? `style="width:${n.w};"` : '';
-      bodyHTML = `<textarea class="content-area label-area" ${styleAttr} placeholder="[ TÍTULO ]">${n.content || ''}</textarea>`;
-    } else if (n.mode === 'text') {
+    if (n.mode === 'text') {
       const styleAttr = (n.type === 'stack' && n.w) ? `style="width:${n.w};"` : '';
       bodyHTML = `<textarea class="content-area" ${styleAttr} placeholder="[ ESCRIBE AQUÍ ]">${n.content}</textarea>`;
       headerHTML = `<div class="node-header"><input type="text" class="title-input" value="${n.title}"></div>`;
@@ -200,14 +233,14 @@ function render() {
       headerHTML = `<div class="node-header"><input type="text" class="title-input" value="${n.title}"></div>`;
     }
 
-    if (!chapter && !isLabel && n.type !== 'stack') {
+    if (n.type !== 'stack') {
       footerHTML = `
         <div class="node-toolbar">
           <button class="mode-btn ${n.mode === 'text' ? 'active' : ''}" data-mode="text">TXT</button>
           <button class="mode-btn ${n.mode === 'list' ? 'active' : ''}" data-mode="list">LST</button>
           <button class="mode-btn ${n.mode === 'check' ? 'active' : ''}" data-mode="check">PRMPT</button>
         </div>`;
-    } else if (!chapter && !isLabel && n.type === 'stack') {
+    } else {
       headerHTML = `<div class="node-header"><input type="text" class="title-input" value="${n.title}"></div>`;
     }
 
@@ -219,82 +252,40 @@ function render() {
       ${footerHTML}
     `;
 
-    if (chapter) {
-      /* chapter body is static hint — no content editors */
-    } else if (isLabel) {
-      const tx = el.querySelector('textarea.label-area');
-      if (tx) {
-        setTimeout(() => autoResize(tx), 0);
-        if (!readOnly && chapterAllowsEdit(n)) {
-          tx.oninput = (e) => { n.content = e.target.value; autoResize(tx); saveState(false); };
-          tx.onmouseup = () => { if (tx.style.width) { n.w = tx.style.width; saveState(false); } };
-          tx.onblur = () => saveState(true);
-        } else {
-          tx.readOnly = true;
-        }
-      }
-    } else if (n.mode === 'text') {
+    if (n.mode === 'text') {
       const tx = el.querySelector('textarea.content-area');
       if (tx) {
         setTimeout(() => autoResize(tx), 0);
-        if (!readOnly && chapterAllowsEdit(n)) {
-          if (n.type === 'stack') {
-            tx.oninput = (e) => { n.content = e.target.value; autoResize(tx); saveState(false); };
-            tx.onmouseup = () => { if (tx.style.width) { n.w = tx.style.width; saveState(false); } };
-          } else {
-            tx.oninput = (e) => { n.content = e.target.value; autoResize(tx); saveState(false); };
-          }
-          tx.onblur = () => saveState(true);
+        if (n.type === 'stack') {
+          tx.oninput = (e) => { n.content = e.target.value; autoResize(tx); saveState(false); };
+          tx.onmouseup = () => { if (tx.style.width) { n.w = tx.style.width; saveState(false); } };
         } else {
-          tx.readOnly = true;
+          tx.oninput = (e) => { n.content = e.target.value; autoResize(tx); saveState(false); };
         }
+        tx.onblur = () => saveState(true);
       }
-    } else if (!chapter && !readOnly) {
-      el.querySelectorAll('.list-input').forEach(inp => {
-        inp.oninput = (e) => { n.items[e.target.dataset.idx].text = e.target.value; saveState(false); };
-        inp.onblur = () => saveState(true);
-      });
-      if (n.mode === 'check') {
-        el.querySelectorAll('.check-box').forEach(cb => cb.onchange = (e) => {
-          pushUndo();
-          n.items[e.target.dataset.idx].checked = e.target.checked;
-          saveState(false);
-        });
-      }
-      bindListItemActions(el, n);
-      const addItem = el.querySelector('.add-item');
-      if (addItem) addItem.onclick = () => {
-        pushUndo();
-        n.items.push({ text: '', checked: false });
-        render();
-        saveState(false);
-      };
+    } else {
+      bindListModeHandlers(el, n);
     }
 
     const titleInp = el.querySelector('.title-input');
     if (titleInp) {
-      const canEditTitle = !readOnly && chapterTitleEditable(n);
-      if (!canEditTitle) titleInp.readOnly = true;
-      if (canEditTitle) {
-        titleInp.oninput = (e) => { n.title = e.target.value.toUpperCase(); saveState(false); };
-        titleInp.onblur = () => saveState(true);
-      }
+      titleInp.oninput = (e) => { n.title = e.target.value.toUpperCase(); saveState(false); };
+      titleInp.onblur = () => saveState(true);
       if (n.type === 'link' || n.type === 'photo') {
         titleInp.onmousedown = (e) => e.stopPropagation();
         titleInp.onclick = (e) => e.stopPropagation();
       }
     }
 
-    if (!chapter && !readOnly) {
-      el.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => {
-        pushUndo();
-        n.mode = btn.dataset.mode;
-        render();
-        saveState(false);
-      });
-    }
+    el.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => {
+      pushUndo();
+      n.mode = btn.dataset.mode;
+      render();
+      saveState(false);
+    });
 
-    const useBodyPointer = n.type === 'stack' || n.type === 'label' || n.type === 'document';
+    const useBodyPointer = n.type === 'stack' || n.type === 'document';
     const isMedia = n.type === 'link' || n.type === 'photo';
 
     if (useBodyPointer) {
@@ -323,26 +314,29 @@ function render() {
       selectedNodeIds.add(n.id);
       updateSelectionVisuals();
       document.getElementById('menu-paint').style.display = (n.type === 'stack' || Array.from(selectedNodeIds).some(id => ctx.nodes.find(x => x.id === id && x.type === 'stack'))) ? 'block' : 'none';
-      const promoteEl = document.getElementById('menu-promote-chapter');
-      if (promoteEl) promoteEl.style.display = n.type === 'stack' ? 'block' : 'none';
       const expandEl = document.getElementById('menu-expand-list');
       if (expandEl) expandEl.style.display = (n.mode === 'list' || n.mode === 'check') ? 'block' : 'none';
-      const keepEl = document.getElementById('menu-export-keep');
-      if (keepEl) keepEl.style.display = 'block';
-      updateChapterContextMenu(n);
       menu.style.left = e.clientX + 'px';
       menu.style.top = e.clientY + 'px';
       menu.style.display = 'block';
     };
 
-    nodesLayer.appendChild(el);
+    if (n.type === 'document' && setupDocumentNode(el, n)) needsLucide = true;
+    if ((n.type === 'link' || n.type === 'photo') && setupMediaNode(el, n, ctx)) needsLucide = true;
+    appendNodeMarker(el, n);
+
+    fragment.appendChild(el);
   });
+
+  nodesLayer.appendChild(fragment);
 
   updateSelectionVisuals();
   updateHoverVisuals();
   updateDependencyHighlights();
   if (typeof updateFocusHighlights === 'function') updateFocusHighlights();
-  lucide.createIcons();
-  drawConnections();
+  if (typeof updateTituloVisuals === 'function') updateTituloVisuals();
+  if (needsLucide) lucide.createIcons();
+  scheduleDrawConnections();
   if (typeof updateEmptyState === 'function') updateEmptyState();
+  if (typeof updateNodeCount === 'function') updateNodeCount();
 }

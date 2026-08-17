@@ -13,13 +13,11 @@ function closeHelpPanel() {
 function closeAllOverlays() {
   closeAllDropdowns();
   closeHelpPanel();
-  ['search-panel', 'archive-panel', 'sync-panel', 'snapshots-panel'].forEach(id => {
-    const panel = document.getElementById(id);
-    if (panel?.classList.contains('open')) {
-      panel.classList.remove('open');
-      panel.setAttribute('aria-hidden', 'true');
-    }
-  });
+  const searchPanel = document.getElementById('search-panel');
+  if (searchPanel?.classList.contains('open')) {
+    searchPanel.classList.remove('open');
+    searchPanel.setAttribute('aria-hidden', 'true');
+  }
 }
 
 function initToolbar() {
@@ -27,21 +25,20 @@ function initToolbar() {
   if (!uiLayer || uiLayer.dataset.toolbarBound) return;
   uiLayer.dataset.toolbarBound = '1';
 
-  uiLayer.addEventListener('click', (e) => {
-    const toggle = e.target.closest('.ui-cluster-toggle');
-    if (toggle && uiLayer.contains(toggle)) {
+  document.querySelectorAll('.ui-dropdown-wrap').forEach(wrap => {
+    const toggle = wrap.querySelector('.ui-cluster-toggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      const wrap = toggle.closest('.ui-dropdown-wrap');
-      if (!wrap) return;
       const wasOpen = wrap.classList.contains('open');
       closeAllOverlays();
       if (!wasOpen) wrap.classList.add('open');
-      return;
-    }
+    });
+  });
 
-    const item = e.target.closest('.dropdown-item');
-    if (item && uiLayer.contains(item)) {
-      e.stopPropagation();
+  uiLayer.addEventListener('click', (e) => {
+    if (e.target.closest('.dropdown-item')) {
       closeAllDropdowns();
     }
   });
@@ -54,7 +51,7 @@ function initToolbar() {
     helpBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const willOpen = !helpPanel.classList.contains('open');
-      closeAllDropdowns();
+      closeAllOverlays();
       if (willOpen) {
         helpPanel.classList.add('open');
         helpPanel.setAttribute('aria-hidden', 'false');
@@ -71,7 +68,8 @@ function initToolbar() {
     });
   }
 
-  viewport.addEventListener('mousedown', () => {
+  viewport.addEventListener('mousedown', (e) => {
+    if (e.target.closest('#nucleus-hub') || e.target.closest('.nucleus-fab')) return;
     closeAllOverlays();
   });
 }

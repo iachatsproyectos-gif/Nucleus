@@ -1,4 +1,9 @@
 const PORT_SIDES = ['top', 'right', 'bottom', 'left'];
+let _connectionsRaf = null;
+
+let portDragging = false;
+let portDragPreviewPath = null;
+const svgPreviewLayer = document.getElementById('svg-preview-layer');
 
 function migrateConnection(conn) {
   return {
@@ -17,27 +22,33 @@ function migrateConnectionsList(connections) {
 
 function migrateNodeTree(nodes) {
   nodes.forEach(n => {
+    if (n.type === 'stack' && !Array.isArray(n.connections)) n.connections = [];
     if (n.connections) n.connections = migrateConnectionsList(n.connections);
     if (n.subNodes && n.subNodes.length) migrateNodeTree(n.subNodes);
   });
 }
 
-function getPortAnchor(node, el, side) {
-  const portEl = el.querySelector(`.port-${side}`);
-  if (portEl) {
-    const nodeRect = el.getBoundingClientRect();
-    const portRect = portEl.getBoundingClientRect();
-    const relX = (portRect.left + portRect.width / 2 - nodeRect.left) / scale;
-    const relY = (portRect.top + portRect.height / 2 - nodeRect.top) / scale;
-    return { x: node.x + relX, y: node.y + relY };
+function getPortAnchorFromBounds(node, side) {
+  const b = getNodeBounds(node);
+  switch (side) {
+    case 'top': return { x: b.x + b.w / 2, y: b.y };
+    case 'bottom': return { x: b.x + b.w / 2, y: b.y + b.h };
+    case 'left': return { x: b.x, y: b.y + b.h / 2 };
+    case 'right': return { x: b.x + b.w, y: b.y + b.h / 2 };
+    default: return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
   }
+}
+
+function getPortAnchor(node, el, side) {
+  if (!el) return getPortAnchorFromBounds(node, side);
   const w = el.offsetWidth;
   const h = el.offsetHeight;
+  const pad = el.classList.contains('stack-mode') ? 2 : 3;
   switch (side) {
-    case 'top': return { x: node.x + w / 2, y: node.y };
-    case 'bottom': return { x: node.x + w / 2, y: node.y + h };
-    case 'left': return { x: node.x, y: node.y + h / 2 };
-    case 'right': return { x: node.x + w, y: node.y + h / 2 };
+    case 'top': return { x: node.x + w / 2, y: node.y - pad };
+    case 'bottom': return { x: node.x + w / 2, y: node.y + h + pad };
+    case 'left': return { x: node.x - pad, y: node.y + h / 2 };
+    case 'right': return { x: node.x + w + pad, y: node.y + h / 2 };
     default: return { x: node.x + w / 2, y: node.y + h / 2 };
   }
 }
@@ -92,28 +103,232 @@ function buildConnectionPath(x1, y1, x2, y2, fromPort, toPort) {
 
 function clearPortHighlights() {
   document.querySelectorAll('.port-connecting').forEach(p => p.classList.remove('port-connecting'));
+  document.querySelectorAll('.port-drop-target').forEach(p => p.classList.remove('port-drop-target'));
 }
 
-function nodeHasPorts(n) {
-  if (n.type === 'region') return false;
-  if (n.type === 'chapter') {
-    return n.phase === 'active' || n.phase === 'fogged' || n.phase === 'unlocked';
+function clientToWorld(clientX, clientY) {
+  return {
+    x: (clientX - offsetX) / scale,
+    y: (clientY - offsetY) / scale
+  };
+}
+
+/** Salida (→ downstream): right/bottom. Entrada (← upstream): left/top. */
+function isOutgoingPort(side) {
+  return side === 'right' || side === 'bottom';
+}
+
+function defaultPortForIncoming(fromSide) {
+  switch (fromSide) {
+    case 'right': return 'left';
+    case 'left': return 'right';
+    case 'bottom': return 'top';
+    case 'top': return 'bottom';
+    default: return 'left';
   }
+}
+
+function cancelPortDrag() {
+  portDragging = false;
+  connectingNode = null;
+  connectingFromPort = null;
+  clearPortHighlights();
+  if (portDragPreviewPath) {
+    portDragPreviewPath.remove();
+    portDragPreviewPath = null;
+  }
+  if (svgPreviewLayer) svgPreviewLayer.innerHTML = '';
+}
+
+function findPortOnNode(nodeEl, clientX, clientY) {
+  const ports = nodeEl.querySelectorAll('.port');
+  let best = null;
+  let bestDist = Infinity;
+  ports.forEach(port => {
+    const r = port.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const d = (cx - clientX) ** 2 + (cy - clientY) ** 2;
+    if (d < bestDist) {
+      bestDist = d;
+      best = port;
+    }
+  });
+  if (!best) return null;
+  return { nodeId: nodeEl.dataset.id, side: best.dataset.side, portEl: best };
+}
+
+function findPortAt(clientX, clientY) {
+  const el = document.elementFromPoint(clientX, clientY);
+  const port = el?.closest?.('.port');
+  if (port) {
+    const nodeEl = port.closest('.node');
+    if (!nodeEl?.dataset.id) return null;
+    return { nodeId: nodeEl.dataset.id, side: port.dataset.side, portEl: port };
+  }
+  const nodeEl = el?.closest?.('.node');
+  if (nodeEl?.dataset.id) return findPortOnNode(nodeEl, clientX, clientY);
+  return null;
+}
+
+function highlightDropTarget(clientX, clientY) {
+  document.querySelectorAll('.port-drop-target').forEach(p => p.classList.remove('port-drop-target'));
+  const hit = findPortAt(clientX, clientY);
+  if (hit && connectingNode && String(hit.nodeId) !== String(connectingNode.id)) {
+    hit.portEl.classList.add('port-drop-target');
+  }
+}
+
+function updatePortDragPreview(clientX, clientY) {
+  if (!portDragging || !connectingNode || !connectingFromPort) return;
+  const ctx = getCurrentContext();
+  const srcEl = document.querySelector(`.node[data-id="${connectingNode.id}"]`);
+  if (!srcEl) return;
+  const a1 = getPortAnchor(connectingNode, srcEl, connectingFromPort);
+  const world = clientToWorld(clientX, clientY);
+  const toPort = defaultPortForIncoming(connectingFromPort);
+  const d = buildConnectionPath(a1.x, a1.y, world.x, world.y, connectingFromPort, toPort);
+
+  if (!portDragPreviewPath && svgPreviewLayer) {
+    portDragPreviewPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    portDragPreviewPath.setAttribute('class', 'connection-line connection-line-preview');
+    svgPreviewLayer.appendChild(portDragPreviewPath);
+  }
+  if (portDragPreviewPath) portDragPreviewPath.setAttribute('d', d);
+  highlightDropTarget(clientX, clientY);
+}
+
+function addConnection(ctx, fromId, toId, fromPort, toPort) {
+  if (!Array.isArray(ctx.connections)) ctx.connections = [];
+  const dup = ctx.connections.some(c =>
+    c.from === fromId && c.to === toId && c.fromPort === fromPort && c.toPort === toPort
+  );
+  if (dup) return false;
+  ctx.connections.push({ from: fromId, to: toId, fromPort, toPort });
+  const fromNode = ctx.nodes.find(n => n.id === fromId);
+  const toNode = ctx.nodes.find(n => n.id === toId);
+  if (typeof onNodeConnected === 'function') onNodeConnected(fromNode, toNode);
   return true;
 }
 
-function isHorizonChapterPhase(n) {
-  return isChapterNode(n) && (n.phase === 'fogged' || n.phase === 'unlocked');
+function spawnStackFromPortDrop(sourceNode, fromPort, worldX, worldY) {
+  const ctx = getCurrentContext();
+  const newId = generateNodeId();
+  const newPort = defaultPortForIncoming(fromPort);
+  const outgoing = isOutgoingPort(fromPort);
+
+  let nx = worldX - 120;
+  let ny = worldY - 40;
+  const srcEl = document.querySelector(`.node[data-id="${sourceNode.id}"]`);
+  const srcAnchor = getPortAnchor(sourceNode, srcEl, fromPort);
+  const dist = Math.hypot(worldX - srcAnchor.x, worldY - srcAnchor.y);
+  if (dist < 48) {
+    const off = 260;
+    if (fromPort === 'right') { nx = sourceNode.x + off; ny = sourceNode.y; }
+    else if (fromPort === 'left') { nx = sourceNode.x - off; ny = sourceNode.y; }
+    else if (fromPort === 'bottom') { nx = sourceNode.x; ny = sourceNode.y + 120; }
+    else if (fromPort === 'top') { nx = sourceNode.x; ny = sourceNode.y - 120; }
+  }
+
+  const newNode = {
+    id: newId,
+    x: nx,
+    y: ny,
+    type: 'stack',
+    title: '',
+    mode: 'text',
+    content: '',
+    items: [{ text: '', checked: false }],
+    subNodes: [],
+    connections: [],
+    isPainted: false,
+    lifeTag: 'none'
+  };
+  ctx.nodes.push(newNode);
+
+  if (outgoing) {
+    addConnection(ctx, sourceNode.id, newId, fromPort, newPort);
+  } else {
+    addConnection(ctx, newId, sourceNode.id, newPort, fromPort);
+  }
+
+  selectedNodeIds.clear();
+  selectedNodeIds.add(newId);
+  focusNodeId = newId;
+  return newNode;
 }
 
-function getHorizonGradientInfo(f, t, a1, a2) {
-  if (isChapterNode(f) && f.phase === 'active' && isHorizonChapterPhase(t)) {
-    return { solid: a1, fade: a2 };
+function finishPortDrag(clientX, clientY) {
+  if (!portDragging || !connectingNode || !connectingFromPort) {
+    cancelPortDrag();
+    return;
   }
-  if (isChapterNode(t) && t.phase === 'active' && isHorizonChapterPhase(f)) {
-    return { solid: a2, fade: a1 };
+
+  const ctx = getCurrentContext();
+  const sourceNode = connectingNode;
+  const fromPort = connectingFromPort;
+  const hit = findPortAt(clientX, clientY);
+  let changed = false;
+
+  try {
+    if (hit && String(hit.nodeId) !== String(sourceNode.id)) {
+      const targetNode = ctx.nodes.find(n => String(n.id) === String(hit.nodeId));
+      if (targetNode) {
+        pushUndo();
+        const toPort = hit.side;
+        if (isOutgoingPort(fromPort)) {
+          changed = addConnection(ctx, sourceNode.id, targetNode.id, fromPort, toPort);
+        } else {
+          changed = addConnection(ctx, targetNode.id, sourceNode.id, toPort, fromPort);
+        }
+      }
+    } else {
+      const onNode = document.elementFromPoint(clientX, clientY)?.closest?.('.node');
+      if (!onNode) {
+        pushUndo();
+        const world = clientToWorld(clientX, clientY);
+        spawnStackFromPortDrop(sourceNode, fromPort, world.x, world.y);
+        showAppToast('Sub creada y conectada.');
+        changed = true;
+      }
+    }
+  } catch (err) {
+    console.error('Error al conectar nodos:', err);
+    showAppToast?.('No se pudo crear la conexión.');
+  } finally {
+    cancelPortDrag();
   }
-  return null;
+
+  if (changed) {
+    saveState(false);
+    render();
+  }
+}
+
+function startPortDrag(portEl, n, ctx, portSide, e) {
+  e.preventDefault();
+  e.stopPropagation();
+  portDragging = true;
+  connectingNode = n;
+  connectingFromPort = portSide;
+  clearPortHighlights();
+  portEl.classList.add('port-connecting');
+
+  const onMove = (ev) => updatePortDragPreview(ev.clientX, ev.clientY);
+  const onUp = (ev) => {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    finishPortDrag(ev.clientX, ev.clientY);
+  };
+
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+  updatePortDragPreview(e.clientX, e.clientY);
+}
+
+function nodeHasPorts(n) {
+  if (n.type === 'titulo' || n.type === 'region') return false;
+  return true;
 }
 
 function buildPortsHTML() {
@@ -124,63 +339,60 @@ function buildPortsHTML() {
 
 function setupPortHandlers(el, n, ctx) {
   el.querySelectorAll('.port').forEach(portEl => {
-    portEl.onclick = (e) => {
-      e.stopPropagation();
-      const portSide = portEl.dataset.side;
-
-      if (connectingNode && connectingNode.id !== n.id) {
-        const fromPort = connectingFromPort;
-        const toPort = portSide;
-        const dup = ctx.connections.some(c =>
-          c.from === connectingNode.id && c.to === n.id &&
-          c.fromPort === fromPort && c.toPort === toPort
-        );
-        if (!dup) {
-          pushUndo();
-          ctx.connections.push({ from: connectingNode.id, to: n.id, fromPort, toPort });
-          saveState(false);
-        }
-        connectingNode = null;
-        connectingFromPort = null;
-        clearPortHighlights();
-      } else if (!connectingNode) {
-        connectingNode = n;
-        connectingFromPort = portSide;
-        clearPortHighlights();
-        portEl.classList.add('port-connecting');
-      } else {
-        connectingNode = null;
-        connectingFromPort = null;
-        clearPortHighlights();
-      }
-      drawConnections();
+    portEl.onmousedown = (e) => {
+      if (e.button !== 0) return;
+      startPortDrag(portEl, n, ctx, portEl.dataset.side, e);
     };
   });
 }
 
-function drawConnections() {
+function scheduleDrawConnections(options = {}) {
+  if (focusNodeId != null) options = { ...options, skipHighlights: false };
+  if (_connectionsRaf) {
+    _connectionsRafOpts = { ..._connectionsRafOpts, ...options };
+    return;
+  }
+  _connectionsRafOpts = options;
+  _connectionsRaf = requestAnimationFrame(() => {
+    const opts = _connectionsRafOpts || {};
+    _connectionsRaf = null;
+    _connectionsRafOpts = null;
+    drawConnections(opts);
+  });
+}
+
+let _connectionsRafOpts = null;
+
+function drawConnections(options = {}) {
   svgLayer.innerHTML = '';
   const ctx = getCurrentContext();
-  if (!ctx.connections) return;
+  if (!ctx.connections?.length) {
+    if ((!options.skipHighlights || focusNodeId != null) && typeof updateDependencyHighlights === 'function') {
+      updateDependencyHighlights();
+    }
+    return;
+  }
 
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  svgLayer.appendChild(defs);
+  const nodeEls = new Map();
+  nodesLayer.querySelectorAll('.node[data-id]').forEach(el => {
+    nodeEls.set(Number(el.dataset.id), el);
+  });
+
+  const frag = document.createDocumentFragment();
 
   ctx.connections.forEach((conn, index) => {
     const f = ctx.nodes.find(node => node.id === conn.from);
     const t = ctx.nodes.find(node => node.id === conn.to);
     if (!f || !t) return;
-    if (typeof isNodeHiddenByViewFilter === 'function') {
-      if (isNodeHiddenByViewFilter(f) || isNodeHiddenByViewFilter(t)) return;
-    }
 
-    const fEl = document.querySelector(`.node[data-id="${f.id}"]`);
-    const tEl = document.querySelector(`.node[data-id="${t.id}"]`);
+    const fEl = nodeEls.get(f.id);
+    const tEl = nodeEls.get(t.id);
     if (!fEl || !tEl) return;
 
     const fromPort = conn.fromPort || 'right';
     const toPort = conn.toPort || 'left';
     const a1 = getPortAnchor(f, fEl, fromPort);
+
     const a2 = getPortAnchor(t, tEl, toPort);
 
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -189,29 +401,6 @@ function drawConnections() {
     path.dataset.from = f.id;
     path.dataset.to = t.id;
 
-    const horizon = getHorizonGradientInfo(f, t, a1, a2);
-    if (horizon) {
-      const gradId = 'horizon-grad-' + conn.from + '-' + conn.to + '-' + index;
-      const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-      grad.setAttribute('id', gradId);
-      grad.setAttribute('gradientUnits', 'userSpaceOnUse');
-      grad.setAttribute('x1', horizon.solid.x);
-      grad.setAttribute('y1', horizon.solid.y);
-      grad.setAttribute('x2', horizon.fade.x);
-      grad.setAttribute('y2', horizon.fade.y);
-      const stopA = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-      stopA.setAttribute('offset', '0%');
-      stopA.setAttribute('stop-color', 'rgba(255, 255, 255, 0.42)');
-      const stopB = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-      stopB.setAttribute('offset', '100%');
-      stopB.setAttribute('stop-color', 'rgba(255, 255, 255, 0.04)');
-      grad.appendChild(stopA);
-      grad.appendChild(stopB);
-      defs.appendChild(grad);
-      path.setAttribute('stroke', `url(#${gradId})`);
-      path.setAttribute('class', 'connection-line connection-line-horizon');
-    }
-
     path.oncontextmenu = (e) => {
       e.preventDefault(); e.stopPropagation();
       pushUndo();
@@ -219,7 +408,12 @@ function drawConnections() {
       saveState(false);
       drawConnections();
     };
-    svgLayer.appendChild(path);
+    frag.appendChild(path);
   });
-  if (typeof updateDependencyHighlights === 'function') updateDependencyHighlights();
+
+  svgLayer.appendChild(frag);
+
+  if ((!options.skipHighlights || focusNodeId != null) && typeof updateDependencyHighlights === 'function') {
+    updateDependencyHighlights();
+  }
 }

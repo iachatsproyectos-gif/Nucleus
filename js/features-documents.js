@@ -11,34 +11,22 @@ function openDocModal(node) {
   docTextarea.focus();
 }
 
-const renderObserver = new MutationObserver(() => {
-  const ctx = getCurrentContext();
-  let shouldRefreshIcons = false;
+function setupDocumentNode(el, n) {
+  el.classList.add('document-mode');
+  const header = el.querySelector('.node-header');
+  if (!header || header.querySelector('.icon-container')) return false;
 
-  ctx.nodes.forEach(n => {
-    if (n.type === 'document') {
-      const el = document.querySelector(`.node[data-id="${n.id}"]`);
-      if (el && !el.querySelector('.icon-container')) {
-        el.classList.add('document-mode');
+  const iconContainer = document.createElement('div');
+  iconContainer.className = 'icon-container';
+  iconContainer.innerHTML = '<i data-lucide="file-text" style="width:28px;height:28px;color:var(--dim);pointer-events:none;"></i>';
+  header.appendChild(iconContainer);
 
-        const header = el.querySelector('.node-header');
-        const iconContainer = document.createElement('div');
-        iconContainer.className = 'icon-container';
-        iconContainer.innerHTML = '<i data-lucide="file-text" style="width:28px;height:28px;color:var(--dim);pointer-events:none;"></i>';
-        header.appendChild(iconContainer);
-
-        el.ondblclick = (e) => {
-          e.stopPropagation();
-          openDocModal(n);
-        };
-
-        shouldRefreshIcons = true;
-      }
-    }
-  });
-
-  if (shouldRefreshIcons) lucide.createIcons();
-});
+  el.ondblclick = (e) => {
+    e.stopPropagation();
+    openDocModal(n);
+  };
+  return true;
+}
 
 function initDocuments() {
   document.getElementById('add-doc-btn').onclick = () => createNode('document');
@@ -55,6 +43,4 @@ function initDocuments() {
     docModalOverlay.style.display = 'none';
     docModal.style.display = 'none';
   };
-
-  renderObserver.observe(nodesLayer, { childList: true });
 }

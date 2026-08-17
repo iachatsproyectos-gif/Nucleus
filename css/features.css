@@ -133,7 +133,6 @@
 .node.document-mode.dep-focus .node-header svg,
 .node.document-mode.dep-linked .node-header svg {
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.75));
-  animation: depPulse 3.5s ease-in-out infinite;
 }
 .node.document-mode.dep-dimmed {
   opacity: 0.28;
@@ -184,7 +183,6 @@
 .node.photo-mode.dep-linked .photo-thumbnail,
 .node.photo-mode.dep-focus .node-header svg,
 .node.photo-mode.dep-linked .node-header svg {
-  animation: depPulse 3.5s ease-in-out infinite;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.75));
 }
 .node.link-mode.dep-dimmed,
@@ -210,7 +208,6 @@
 }
 .node.link-mode.dep-focus .link-favicon,
 .node.link-mode.dep-linked .link-favicon {
-  animation: depPulse 3.5s ease-in-out infinite;
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.75));
 }
 

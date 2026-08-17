@@ -1,9 +1,10 @@
 function findNodePath(id, nodes, path) {
   nodes = nodes || rootNodes;
   path = path || [];
+  const sid = String(id);
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i];
-    if (n.id === id) return path.concat(n);
+    if (String(n.id) === sid) return path.concat(n);
     if (n.subNodes && n.subNodes.length) {
       const found = findNodePath(id, n.subNodes, path.concat(n));
       if (found) return found;
@@ -38,11 +39,7 @@ function findNodeContextInfo(id, nodes, connections, path) {
 
 function locationLabelFromNode(n) {
   if (!n) return 'HOME';
-  const label = (n.title || '').trim();
-  if (label) return label;
-  if (isChapterNode(n)) return 'Capítulo';
-  if (n.type === 'stack') return 'Sub';
-  return 'Sin título';
+  return getNodeDisplayName(n, { maxLen: 48, fallback: 'Sub' });
 }
 
 /** Reemplaza el texto de ubicación — nunca concatena la ruta. */
@@ -56,7 +53,7 @@ function syncLocationNameFromStack() {
 
 function nodeAllowsEnter(n) {
   if (!n || n.type === 'region') return false;
-  return chapterAllowsEnter(n);
+  return true;
 }
 
 function enterNavigationLevel(node) {

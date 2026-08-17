@@ -1,6 +1,6 @@
 # Nucleus
 
-Organizador mental espacial: mapas, niveles y capítulos con niebla.
+Organizador mental espacial: mapas, niveles y conexiones en el navegador.
 
 ## Abrir la app
 
@@ -11,16 +11,16 @@ python -m http.server 8080
 
 Visita `http://localhost:8080` — recarga forzada (`Ctrl+Shift+R`) tras actualizaciones.
 
-**PWA:** instala desde el navegador. El service worker cachea assets offline (v6).
+**PWA:** instala desde el navegador. El service worker cachea assets para uso offline.
 
 ## Funciones principales
 
-- **Capítulos:** presente, horizonte (niebla), cierre guiado, archivo de cerrados
-- **Captura:** `Ctrl+Shift+N` → pila INBOX
-- **Navegación:** modo enfoque (F), historial `Alt+←/→`, subir nivel `Alt+↑`
-- **Datos:** multi-mapa local, snapshots (IndexedDB), export/import JSON
-- **Keep:** export/import manual; API vía servidor opcional
-- **Sync nube (opcional):** cifrado client-side + backend en `server/`
+- **Canvas espacial:** nodos, subs, títulos, regiones, conexiones con puertos
+- **Niveles:** entrar en una sub y volver con la barra superior o `Alt+↑`
+- **Media:** documentos, enlaces y fotos en el mapa
+- **Búsqueda:** `Ctrl+K` con filtros por tipo
+- **Nucleus:** checklist diaria + holograma 3D con accesos a home, buscar, encuadrar y subir nivel
+- **Respaldo local:** exportar/importar JSON desde la barra superior
 
 ## Atajos
 
@@ -28,25 +28,13 @@ Visita `http://localhost:8080` — recarga forzada (`Ctrl+Shift+R`) tras actuali
 |-------|--------|
 | `Ctrl+Z` | Deshacer |
 | `Ctrl+K` | Buscar |
-| `Ctrl+Shift+N` | Captura rápida → INBOX |
-| `F` | Modo enfoque |
 | `Alt+↑` / `Backspace` | Subir nivel |
 | `Alt+←/→` | Historial de navegación |
 | Shift + clic marcador | Etiqueta de vida |
 
-## Servidor sync (opcional)
-
-```bash
-cd server
-npm install
-npm start
-```
-
-API en `http://localhost:3001`. Registra usuario con `POST /auth/register`, login en panel **datos → sync nube**.
-
 ## Privacidad
 
-Por defecto todo vive en `localStorage` + IndexedDB local. Sync y Keep API son opt-in.
+El mapa se guarda en `localStorage` de tu navegador. Usa **respaldo → exportar** para copias de seguridad en archivo.
 
 ## Estructura
 
@@ -56,7 +44,6 @@ Nucleus/
 ├── sw.js
 ├── css/
 ├── js/
-├── server/          # Sync + Keep API stub
 └── MANIFESTO.md
 ```
 

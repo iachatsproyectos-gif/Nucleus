@@ -1,9 +1,24 @@
+function scoreSearchMatch(entry, q) {
+  if (!q) return 0;
+  const name = entry.label.toLowerCase();
+  const path = entry.path.toLowerCase();
+  const body = entry.searchText;
+
+  if (name === q) return 100;
+  if (name.startsWith(q)) return 80;
+  if (name.includes(q)) return 60;
+  if (path.includes(q)) return 45;
+  if (body.includes(q)) return 30;
+  return -1;
+}
+
 function initSearchFeatures() {
   const panel = document.getElementById('search-panel');
   const input = document.getElementById('search-input');
   const results = document.getElementById('search-results');
   const toggleBtn = document.getElementById('search-toggle-btn');
   const closeBtn = document.getElementById('search-panel-close');
+  const headerLabel = panel?.querySelector('.panel-header span');
 
   if (!panel || !input || !results) return;
 
@@ -23,41 +38,55 @@ function initSearchFeatures() {
   function matchesSearchFilter(entry) {
     const n = entry.node;
     switch (searchFilterType) {
-      case 'chapter': return isChapterNode(n);
       case 'stack': return n.type === 'stack';
       case 'marked': return n.isMarked || (n.lifeTag && n.lifeTag !== 'none');
-      case 'fog': return isChapterNode(n) && (n.phase === 'fogged' || n.phase === 'unlocked');
       default: return true;
     }
   }
 
   function renderSearchResults(query) {
     const q = (query || '').trim().toLowerCase();
-    let entries = getAllMapNodes();
-    entries = entries.filter(matchesSearchFilter);
-    const filtered = q
-      ? entries.filter(e =>
-          e.label.toLowerCase().includes(q) ||
-          e.path.toLowerCase().includes(q)
-        )
-      : entries.slice(0, 40);
+    let entries = getAllMapNodes().filter(matchesSearchFilter);
 
-    if (!filtered.length) {
+    if (q) {
+      entries = entries
+        .map(e => ({ entry: e, score: scoreSearchMatch(e, q) }))
+        .filter(x => x.score >= 0)
+        .sort((a, b) => b.score - a.score || a.entry.label.localeCompare(b.entry.label, 'es'))
+        .map(x => x.entry);
+    } else {
+      entries.sort((a, b) => {
+        const pathCmp = a.path.localeCompare(b.path, 'es');
+        if (pathCmp !== 0) return pathCmp;
+        return a.label.localeCompare(b.label, 'es');
+      });
+    }
+
+    if (headerLabel) {
+      headerLabel.textContent = q
+        ? `buscar · ${entries.length} resultado${entries.length === 1 ? '' : 's'}`
+        : `mapa · ${entries.length} elemento${entries.length === 1 ? '' : 's'}`;
+    }
+
+    if (!entries.length) {
       results.innerHTML = '<p class="search-empty">Sin resultados</p>';
       return;
     }
 
-    results.innerHTML = filtered.map(e => `
+    results.innerHTML = entries.map(e => `
       <button type="button" class="search-result-item" data-id="${e.id}">
-        <span class="search-result-title">${escapeMapSelectLabel(e.label)}</span>
+        <span class="search-result-row">
+          <span class="search-result-title">${escapeMapSelectLabel(e.label)}</span>
+          <span class="search-result-type">${escapeMapSelectLabel(e.typeLabel)}</span>
+        </span>
+        ${e.preview ? `<span class="search-result-preview">${escapeMapSelectLabel(e.preview)}</span>` : ''}
         <span class="search-result-path">${escapeMapSelectLabel(e.path)}</span>
       </button>
     `).join('');
 
     results.querySelectorAll('.search-result-item').forEach(btn => {
       btn.onclick = () => {
-        const id = Number(btn.dataset.id);
-        if (navigateToNode(id)) closeSearch();
+        if (navigateToNode(btn.dataset.id)) closeSearch();
       };
     });
   }
@@ -77,6 +106,8 @@ function initSearchFeatures() {
     if (panel.classList.contains('open')) closeSearch();
     else openSearch();
   };
+
+  window.openSearchPanel = openSearch;
 
   if (closeBtn) closeBtn.onclick = closeSearch;
 

@@ -28,9 +28,7 @@ let connectingFromPort = null;
 
 let undoHistory = [];
 
-let chapterViewFilter = 'all';
 let currentLocationName = 'HOME';
-let focusModeEnabled = false;
 let searchFilterType = 'all';
 
 let hoveredNodeId = null;
@@ -40,7 +38,20 @@ let contextMenuNode = null;
 function getCurrentContext() {
   if (navigationStack.length === 0) return { nodes: rootNodes, connections: rootConnections, title: "HOME" };
   const last = navigationStack[navigationStack.length - 1];
+  if (!Array.isArray(last.subNodes)) last.subNodes = [];
+  if (!Array.isArray(last.connections)) last.connections = [];
   return { nodes: last.subNodes, connections: last.connections, title: last.title };
+}
+
+function countCurrentLevelNodes() {
+  return getCurrentContext().nodes.filter(n => !n.type || !String(n.type).startsWith('auto-')).length;
+}
+
+function updateNodeCount() {
+  const el = document.getElementById('node-count');
+  if (!el) return;
+  const count = countCurrentLevelNodes();
+  el.textContent = count === 1 ? '1 nodo' : `${count} nodos`;
 }
 
 function updateSelectionVisuals() {
@@ -54,6 +65,7 @@ function updateSelectionVisuals() {
   document.querySelectorAll('.map-region').forEach(el => {
     el.classList.toggle('selected-region', selectedNodeIds.has(Number(el.dataset.regionId)));
   });
+  if (typeof updateTituloVisuals === 'function') updateTituloVisuals();
 }
 
 function getFocusConnectedIds(nodeId, ctx) {
@@ -111,17 +123,42 @@ function getDependencySpanFromNode(nodeId, ctx) {
   };
 }
 
+/** Con foco de dependencias activo, arrastrar nodos fuera del span debe desplazar el canvas. */
+function shouldPanOverNode(nodeId) {
+  if (focusNodeId == null || nodeId == null) return false;
+  const span = getDependencySpanFromNode(focusNodeId, getCurrentContext());
+  return !span.nodeIds.has(nodeId);
+}
+
 function getContextMenuNode() {
   return contextMenuNode;
 }
 
+function isTypingInInput() {
+  const ae = document.activeElement;
+  if (!ae) return false;
+  if (ae.isContentEditable) return true;
+  const tag = ae.tagName;
+  if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return true;
+  if (ae.closest?.('#doc-modal, #link-modal, #photo-modal, #search-panel, #nucleus-hub, .media-modal, .chapter-modal')) return true;
+  return false;
+}
+
+let _lastHoveredNodeId = null;
+
 function updateHoverVisuals() {
-  document.querySelectorAll('.node').forEach(el => {
-    el.classList.toggle('node-hovered', Number(el.dataset.id) === hoveredNodeId);
-  });
-  document.querySelectorAll('.map-region').forEach(el => {
-    el.classList.toggle('node-hovered', Number(el.dataset.regionId) === hoveredNodeId);
-  });
+  if (_lastHoveredNodeId === hoveredNodeId) return;
+  if (_lastHoveredNodeId != null) {
+    const prev = document.querySelector(`.node[data-id="${_lastHoveredNodeId}"], .titulo-node[data-id="${_lastHoveredNodeId}"]`);
+    prev?.classList.remove('node-hovered', 'titulo-hovered');
+    document.querySelector(`.map-region[data-region-id="${_lastHoveredNodeId}"]`)?.classList.remove('node-hovered');
+  }
+  if (hoveredNodeId != null) {
+    const next = document.querySelector(`.node[data-id="${hoveredNodeId}"], .titulo-node[data-id="${hoveredNodeId}"]`);
+    if (next) next.classList.add(next.classList.contains('titulo-node') ? 'titulo-hovered' : 'node-hovered');
+    document.querySelector(`.map-region[data-region-id="${hoveredNodeId}"]`)?.classList.add('node-hovered');
+  }
+  _lastHoveredNodeId = hoveredNodeId;
 }
 
 function updateDependencyHighlights() {
@@ -134,6 +171,7 @@ function updateDependencyHighlights() {
   document.querySelectorAll('.connection-line').forEach(el => {
     el.classList.remove('dep-linked', 'dep-dimmed');
   });
+  clearDependencyFlowStyles();
   if (focusNodeId == null) return;
 
   const ctx = getCurrentContext();
@@ -162,26 +200,41 @@ function updateDependencyHighlights() {
       el.classList.add('dep-dimmed');
     }
   });
+
+  applyDependencyFlowMotion(ctx, nodeIds, edgeKeys);
+}
+
+function clearDependencyFlowStyles() {
+  document.querySelectorAll('.connection-line-bulge').forEach(el => el.remove());
+}
+
+const DEP_FLOW_MAX_EDGES = 36;
+
+function applyDependencyFlowMotion(ctx, nodeIds, edgeKeys) {
+  if (edgeKeys.size > DEP_FLOW_MAX_EDGES) return;
+  document.querySelectorAll('.connection-line.dep-linked').forEach(path => {
+    const len = path.getTotalLength();
+    if (!len) return;
+
+    const bulgeLen = Math.max(16, Math.min(36, len * 0.16));
+    const gapLen = Math.max(1, len - bulgeLen);
+    const isHorizon = path.classList.contains('connection-line-horizon');
+
+    const bulge = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    bulge.setAttribute('d', path.getAttribute('d'));
+    bulge.setAttribute('class', 'connection-line-bulge' + (isHorizon ? ' connection-line-bulge-horizon' : ''));
+    bulge.dataset.from = path.dataset.from;
+    bulge.dataset.to = path.dataset.to;
+    bulge.style.setProperty('--path-len', String(len));
+    bulge.style.strokeDasharray = `${bulgeLen} ${gapLen}`;
+    bulge.style.strokeDashoffset = String(len);
+    bulge.style.animationDelay = `${((Number(path.dataset.from) + Number(path.dataset.to)) % 9) * 0.12}s`;
+
+    path.insertAdjacentElement('afterend', bulge);
+  });
 }
 
 function clearDependencyFocus() {
   focusNodeId = null;
   updateDependencyHighlights();
-}
-
-function dismissDependencyFocusOnBackgroundClick(e) {
-  if (e.button !== 0) return;
-  const t = e.target;
-  if (t.closest?.('.node')) return;
-  if (t.closest?.('.map-region-label')) return;
-  if (t.closest?.('.map-region-handle')) return;
-  if (t.closest?.('.port')) return;
-  if (t.closest?.('#menu')) return;
-  if (t.classList?.contains('connection-line')) return;
-  if (t.closest?.('button, input, select, textarea, label, a, [contenteditable="true"]')) return;
-  clearDependencyFocus();
-  if (!e.shiftKey) {
-    selectedNodeIds.clear();
-    updateSelectionVisuals();
-  }
 }
