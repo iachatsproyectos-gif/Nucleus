@@ -34,3 +34,61 @@ Nucleus takes a different approach:
      ┌──┴──┐      │      ┌──┴──┐
      │     │      │      │     │
    Work  Game   Health  Notes  Concepts
+
+✦ Features
+Spatial canvas
+Nodes, subs and connections
+Hierarchical levels
+Media attachments
+Global search
+Daily checklist
+3D Nucleus Hub
+Local-first storage
+JSON backup / restore
+PWA / offline support
+
+| Shortcut      | Action             |
+| ------------- | ------------------ |
+| `Ctrl + Z`    | Undo               |
+| `Ctrl + K`    | Search             |
+| `Alt + ↑`     | Go up              |
+| `Alt + ← / →` | Navigation history |
+
+
+🛠️ Run locally
+git clone https://github.com/iachatsproyectos-gif/Nucleus.git
+cd Nucleus
+python -m http.server 8080
+
+Open http://localhost:8080.
+
+🧠 Philosophy
+
+Your life is a system, not a list.
+
+Nucleus is built around the idea that projects, goals, ideas and knowledge are interconnected — and should be represented that way.
+
+🗺️ Roadmap
+ Spatial system
+ Nodes & connections
+ Levels
+ Search
+ Daily checklist
+ 3D Hub
+ Local persistence
+ Backup / restore
+ PWA
+ Cloud synchronization
+ Multi-device synchronization
+ AI integration
+ Plugin system
+🔒 Privacy
+
+Nucleus is local-first.
+
+Your data is stored in your browser and is not uploaded to a server by default.
+
+📄 License
+
+Currently intended for personal use by the author.
+
