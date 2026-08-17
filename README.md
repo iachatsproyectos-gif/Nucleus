@@ -36,23 +36,26 @@ Nucleus takes a different approach:
    Work  Game   Health  Notes  Concepts
 
 ```
-✦ Features
-Spatial canvas
-Nodes, subs and connections
-Hierarchical levels
-Media attachments
-Global search
-Daily checklist
-3D Nucleus Hub
-Local-first storage
-JSON backup / restore
-PWA / offline support
+## ✦ Features
 
-| Shortcut      | Action             |
-| ------------- | ------------------ |
-| `Ctrl + Z`    | Undo               |
-| `Ctrl + K`    | Search             |
-| `Alt + ↑`     | Go up              |
+- Spatial canvas
+- Nodes, subs and connections
+- Hierarchical levels
+- Media attachments
+- Global search
+- Daily checklist
+- 3D Nucleus Hub
+- Local-first storage
+- JSON backup / restore
+- PWA / offline support
+
+## ⌨️ Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl + Z` | Undo |
+| `Ctrl + K` | Search |
+| `Alt + ↑` | Go up |
 | `Alt + ← / →` | Navigation history |
 
 
