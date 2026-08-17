@@ -93,7 +93,17 @@ Nucleus is local-first.
 
 Your data is stored in your browser and is not uploaded to a server by default.
 
-## 📄 License
+## License
 
-Currently intended for personal use by the author.
+Nucleus is proprietary software.
+
+The source code is publicly available for viewing and evaluation, but
+no permission is granted to commercially use, redistribute, sublicense,
+modify, or create derivative products from Nucleus without prior written
+permission from the copyright holder.
+
+Any authorized use must retain the original copyright notice and provide
+clear attribution to Nucleus and its author.
+
+See [LICENSE](LICENSE) for the full terms.
 
