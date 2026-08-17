@@ -1,52 +1,36 @@
 # Nucleus
 
-Organizador mental espacial: mapas, niveles y conexiones en el navegador.
+> A spatial operating system for organizing your life, projects, goals and ideas.
 
-## Abrir la app
+Nucleus is an interactive spatial organizer that lets you build a visual map of your life instead of managing everything through traditional lists and folders.
 
-```bash
-cd Nucleus
-python -m http.server 8080
-```
+Create nodes, connect ideas, organize projects into levels, attach media and navigate your system as an interactive space.
 
-Visita `http://localhost:8080` — recarga forzada (`Ctrl+Shift+R`) tras actualizaciones.
+## 🚀 Try Nucleus
 
-**PWA:** instala desde el navegador. El service worker cachea assets para uso offline.
+**[Open the live demo](https://iachatsproyectos-gif.github.io/Nucleus/)**
 
-## Funciones principales
+No installation required.
 
-- **Canvas espacial:** nodos, subs, títulos, regiones, conexiones con puertos
-- **Niveles:** entrar en una sub y volver con la barra superior o `Alt+↑`
-- **Media:** documentos, enlaces y fotos en el mapa
-- **Búsqueda:** `Ctrl+K` con filtros por tipo
-- **Nucleus:** checklist diaria + holograma 3D con accesos a home, buscar, encuadrar y subir nivel
-- **Respaldo local:** exportar/importar JSON desde la barra superior
+> Your data is stored locally in your browser. Nothing is uploaded to a server by default.
 
-## Atajos
+---
 
-| Atajo | Acción |
-|-------|--------|
-| `Ctrl+Z` | Deshacer |
-| `Ctrl+K` | Buscar |
-| `Alt+↑` / `Backspace` | Subir nivel |
-| `Alt+←/→` | Historial de navegación |
-| Shift + clic marcador | Etiqueta de vida |
+## ✦ Why Nucleus?
 
-## Privacidad
+Most productivity tools organize information into lists, folders and dashboards.
 
-El mapa se guarda en `localStorage` de tu navegador. Usa **respaldo → exportar** para copias de seguridad en archivo.
+Nucleus takes a different approach:
 
-## Estructura
+**Your information becomes a spatial system.**
 
-```
-Nucleus/
-├── index.html
-├── sw.js
-├── css/
-├── js/
-└── MANIFESTO.md
-```
-
-## Licencia
-
-Uso personal del autor del repositorio.
+```text
+                 LIFE
+                  │
+        ┌─────────┼─────────┐
+        │         │         │
+     PROJECTS   GOALS     IDEAS
+        │         │         │
+     ┌──┴──┐      │      ┌──┴──┐
+     │     │      │      │     │
+   Work  Game   Health  Notes  Concepts
