@@ -1,0 +1,82 @@
+.titulo-node {
+  position: absolute;
+  pointer-events: all;
+  width: auto;
+  max-width: min(90vw, 640px);
+  cursor: grab;
+  z-index: 2;
+  transition: filter 0.25s ease;
+}
+
+.titulo-node:active {
+  cursor: grabbing;
+}
+
+.titulo-node.titulo-dragging {
+  cursor: grabbing;
+}
+
+.titulo-glass {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.14);
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 10px 22px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 72px;
+  border-radius: 0;
+}
+
+.titulo-text {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.45;
+  text-align: center;
+  text-transform: uppercase;
+  min-width: 48px;
+  width: 100%;
+  field-sizing: content;
+}
+
+.titulo-text::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+  text-transform: uppercase;
+}
+
+.titulo-text:focus {
+  color: rgba(255, 255, 255, 0.96);
+  cursor: text;
+}
+
+.titulo-node:hover .titulo-text,
+.titulo-node.titulo-hovered .titulo-text {
+  text-shadow:
+    0 0 18px rgba(255, 255, 255, 0.35),
+    0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
+.titulo-node.titulo-selected .titulo-text {
+  text-shadow:
+    0 0 26px rgba(255, 255, 255, 0.5),
+    0 6px 22px rgba(0, 0, 0, 0.7),
+    0 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.titulo-node.titulo-selected .titulo-glass {
+  background: rgba(0, 0, 0, 0.2);
+}

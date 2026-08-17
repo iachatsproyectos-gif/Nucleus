@@ -1,0 +1,103 @@
+/* Nucleus — ajustes móvil / Android */
+
+@media (max-width: 768px) {
+  :root {
+    --topbar-height: 52px;
+  }
+
+  html, body {
+    overscroll-behavior: none;
+  }
+
+  #app-topbar {
+    padding: 0 8px;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  #app-topbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  #ui-layer {
+    flex-wrap: nowrap;
+    min-width: max-content;
+  }
+
+  .mini-btn,
+  .mini-btn-compact {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .ui-dropdown {
+    max-width: calc(100vw - 24px);
+  }
+
+  #viewport {
+    top: var(--topbar-height);
+  }
+
+  .nucleus-fab {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    width: 52px;
+    height: 52px;
+  }
+
+  #nucleus-hub {
+    inset: 0;
+    border-radius: 0;
+  }
+
+  #nucleus-hub .nucleus-hub-panel {
+    max-height: 42vh;
+  }
+
+  .node {
+    min-width: 120px;
+  }
+
+  .node-title-input,
+  .node-body-input {
+    font-size: 16px;
+  }
+
+  #context-menu {
+    min-width: 180px;
+  }
+
+  #context-menu button {
+    min-height: 40px;
+    padding: 10px 14px;
+  }
+
+  .panel,
+  .search-panel,
+  .help-panel {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 480px) {
+  #app-brand-title {
+    font-size: 14px;
+  }
+
+  .empty-state-inner h2 {
+    font-size: 20px;
+  }
+
+  .empty-state-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

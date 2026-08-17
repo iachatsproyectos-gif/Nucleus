@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Nucleus — organizador mental espacial. Mapas en tu navegador.">
+  <meta name="theme-color" content="#000000">
+  <title>Nucleus</title>
+  <link rel="icon" href="assets/favicon.ico?v=57" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=57">
+  <link rel="apple-touch-icon" href="assets/icon-192.png?v=57">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/nodes.css">
+  <link rel="stylesheet" href="css/titulo.css">
+  <link rel="stylesheet" href="css/features.css">
+  <link rel="stylesheet" href="css/toolbar.css">
+  <link rel="stylesheet" href="css/onboarding.css">
+  <link rel="stylesheet" href="css/panels.css?v=66">
+  <link rel="stylesheet" href="css/nucleus-hub.css?v=82">
+  <link rel="stylesheet" href="css/mobile.css?v=1">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/three.module.js",
+      "three/addons/": "./vendor/three/addons/"
+    }
+  }
+  </script>
+  <script src="vendor/lucide.min.js"></script>
+</head>
+<body>
+
+<div id="grain-overlay" aria-hidden="true"></div>
+
+<header id="app-topbar">
+<div id="app-brand"><span id="app-brand-title">Nucleus</span></div>
+<div id="ui-layer">
+
+  <div class="ui-cluster">
+    <button id="undo-btn" class="mini-btn mini-btn-compact" type="button" title="Ctrl+Z">deshacer</button>
+  </div>
+
+  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="nodes">
+    <button class="ui-cluster-toggle mini-btn mini-btn-compact" type="button">
+      nodos<i data-lucide="chevron-down" class="chevron"></i>
+    </button>
+    <div class="ui-dropdown">
+      <button id="add-system-btn" class="dropdown-item" type="button">añadir nodo</button>
+      <button id="add-label-btn" class="dropdown-item" type="button">añadir título</button>
+      <button id="add-stack-btn" class="dropdown-item" type="button">añadir sub</button>
+      <button id="add-region-btn" class="dropdown-item" type="button">añadir región</button>
+    </div>
+  </div>
+
+  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="media">
+    <button class="ui-cluster-toggle mini-btn mini-btn-compact" type="button">
+      media<i data-lucide="chevron-down" class="chevron"></i>
+    </button>
+    <div class="ui-dropdown">
+      <button id="add-doc-btn" class="dropdown-item" type="button">documento</button>
+      <button id="add-link-btn" class="dropdown-item" type="button">enlace</button>
+      <button id="add-photo-btn" class="dropdown-item" type="button">foto</button>
+    </div>
+  </div>
+
+  <div class="ui-cluster">
+    <button id="search-toggle-btn" class="mini-btn mini-btn-compact" type="button" title="Ctrl+K">buscar</button>
+  </div>
+
+  <div class="ui-cluster ui-dropdown-wrap" data-dropdown="backup">
+    <button class="ui-cluster-toggle mini-btn mini-btn-compact" type="button">
+      respaldo<i data-lucide="chevron-down" class="chevron"></i>
+    </button>
+    <div class="ui-dropdown">
+      <button id="export-backup-btn" class="dropdown-item" type="button">exportar respaldo</button>
+      <button id="import-backup-btn" class="dropdown-item" type="button">importar respaldo</button>
+    </div>
+  </div>
+  <input type="file" id="import-backup-input" accept="application/json,.json" hidden>
+
+  <div class="ui-cluster">
+    <button id="help-toggle-btn" class="mini-btn mini-btn-compact" type="button" title="Ayuda">ayuda</button>
+  </div>
+
+</div>
+<div id="location-wrap" title="Estás en el mapa principal">
+  <input type="text" id="location-label" class="location-input" readonly value="HOME" aria-label="Ubicación actual" tabindex="-1">
+</div>
+</header>
+
+<aside id="help-panel" aria-hidden="true">
+  <div class="help-panel-header">
+    <span>ayuda</span>
+    <button id="help-panel-close" type="button" aria-label="Cerrar ayuda">×</button>
+  </div>
+  <div class="help-panel-body">
+    <div class="dropdown-help">
+      <strong>Conexiones</strong>
+      <p>Arrastra un chuzo hacia el canvas → crea una sub conectada (estilo Blueprint).</p>
+      <p>Suelta en otro chuzo para conectar · <kbd>Esc</kbd> cancela · Clic derecho en línea borra</p>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-help">
+      <strong>Canvas</strong>
+      <p>Arrastra fondo para mover · Rueda o pinch para zoom · <kbd>Shift</kbd>+arrastre selecciona varios</p>
+      <p><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · Barra superior = nivel actual (clic sube) · <kbd>Ctrl</kbd>+<kbd>K</kbd> buscar</p>
+      <p><kbd>Alt</kbd>+↑ subir nivel · Shift+clic marcador = etiqueta vida</p>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-help">
+      <strong>Respaldo</strong>
+      <p>Barra superior → <em>respaldo</em>: exporta o restaura tu mapa en JSON.</p>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-help">
+      <strong>Nucleus</strong>
+      <p>Icono inferior derecho: checklist diaria + holograma. Satélites → home, buscar, encuadrar, subir nivel.</p>
+      <p>Tus datos viven en este navegador hasta que exportes un respaldo.</p>
+    </div>
+    <div class="dropdown-divider"></div>
+    <div class="dropdown-help">
+      <strong>Edición</strong>
+      <p>Clic derecho → <em>duplicar</em> clona nodos seleccionados.</p>
+    </div>
+  </div>
+</aside>
+
+<aside id="search-panel" aria-hidden="true">
+  <div class="panel-header">
+    <span>buscar en el mapa</span>
+    <button id="search-panel-close" type="button" aria-label="Cerrar">×</button>
+  </div>
+  <input type="search" id="search-input" class="search-input" placeholder="Nombre, contenido o ruta…" autocomplete="off">
+  <div class="search-filter-bar">
+    <button type="button" class="search-filter-chip active" data-filter="all">todo</button>
+    <button type="button" class="search-filter-chip" data-filter="stack">pila</button>
+    <button type="button" class="search-filter-chip" data-filter="marked">marcado</button>
+  </div>
+  <div id="search-results" class="search-results"></div>
+</aside>
+
+<div id="nucleus-hub" aria-hidden="true">
+  <div class="nucleus-hub-body">
+    <div class="nucleus-core-stage" id="nucleus-core-stage">
+      <div id="nucleus-core-mount" aria-label="Núcleo holográfico de Nucleus"></div>
+    </div>
+    <aside id="daily-checklist-panel" class="nucleus-hub-checklist" aria-label="Checklist diaria">
+      <div class="panel-header">
+        <span>checklist diaria</span>
+        <button id="daily-checklist-close" type="button" aria-label="Cerrar Nucleus">×</button>
+      </div>
+      <div id="daily-checklist-tabs" class="daily-checklist-tabs" role="tablist"></div>
+      <div class="daily-checklist-date-bar">
+        <span class="daily-checklist-date-label">fecha</span>
+        <input type="date" id="daily-checklist-date" class="daily-checklist-date-input" aria-label="Elegir fecha">
+      </div>
+      <p id="daily-checklist-subtitle" class="daily-checklist-subtitle"></p>
+      <div id="daily-checklist-list" class="daily-checklist-list"></div>
+      <button type="button" id="daily-checklist-add" class="daily-checklist-add">+ añadir ítem</button>
+      <div id="daily-checklist-status" class="daily-checklist-status" aria-live="polite"></div>
+    </aside>
+  </div>
+  <button type="button" id="nucleus-hub-close" aria-label="Cerrar">×</button>
+</div>
+
+<button type="button" id="nucleus-hub-btn" class="nucleus-fab" title="Nucleus — checklist diaria" aria-label="Nucleus — checklist diaria">
+  <span class="nucleus-fab-inner">
+    <canvas id="nucleus-fab-canvas" width="44" height="44" aria-hidden="true"></canvas>
+    <span class="nucleus-fab-brand" aria-hidden="true"></span>
+  </span>
+</button>
+
+<div id="viewport">
+  <div id="empty-state-overlay">
+    <div class="empty-state-inner">
+      <h2>Tu mapa está vacío</h2>
+      <p>Añade una sub para soltar ideas o un nodo para desarrollar.</p>
+      <div class="empty-state-actions">
+        <button type="button" id="empty-add-stack" class="empty-state-btn">añadir sub</button>
+        <button type="button" id="empty-add-node" class="empty-state-btn">añadir nodo</button>
+      </div>
+    </div>
+  </div>
+  <div id="workspace">
+    <svg id="svg-preview-layer"></svg>
+    <svg id="svg-layer"></svg>
+    <div id="nodes-layer"></div>
+  </div>
+</div>
+
+<div id="node-count" aria-live="polite">0 nodos</div>
+
+<div id="app-toast"></div>
+
+<div id="menu">
+  <div id="menu-enter">entrar nivel</div>
+  <div id="menu-expand-list" style="display:none">desplegar como sub-pilas</div>
+  <div id="menu-duplicate">duplicar</div>
+  <div id="menu-paint">marcar sub</div>
+  <div id="menu-delete">eliminar</div>
+</div>
+
+<div id="selection-box"></div>
+
+<div id="doc-modal-overlay"></div>
+<div id="doc-modal">
+  <div id="doc-modal-header">
+    <span id="doc-modal-title">EDITOR DE DOCUMENTO</span>
+    <button id="close-doc-modal">X</button>
+  </div>
+  <textarea id="doc-textarea" placeholder="[ ESCRIBE TU DOCUMENTO… ]"></textarea>
+</div>
+
+<div id="link-modal" class="media-modal">
+  <div class="media-modal-header"><span>EDITOR DE ENLACE</span><button class="media-close-btn" data-target="link">X</button></div>
+  <div class="media-modal-body">
+    <input type="text" id="link-url" class="media-input" placeholder="https://...">
+    <button id="visit-link-btn" class="media-btn">Abrir enlace en nueva pestaña</button>
+  </div>
+</div>
+
+<div id="photo-modal" class="media-modal">
+  <div class="media-modal-header"><span>URL DE FOTO</span><button class="media-close-btn" data-target="photo">X</button></div>
+  <div class="media-modal-body">
+    <input type="text" id="photo-url" class="media-input" placeholder="Pega la URL de la imagen…">
+  </div>
+</div>
+
+<div id="onboarding-modal" class="onboarding-modal">
+  <div class="onboarding-card">
+    <div class="onboarding-step active">
+      <h3>Subs para capturar</h3>
+      <p>Usa <em>sub</em> para soltar ideas sin estructura. Entra con clic derecho → entrar nivel.</p>
+    </div>
+    <div class="onboarding-step">
+      <h3>Profundidad bajo demanda</h3>
+      <p>Cada sub puede contener nodos y más subs. La barra blanca arriba muestra solo dónde estás ahora.</p>
+    </div>
+    <div class="onboarding-actions">
+      <button type="button" id="onboarding-skip" class="onboarding-btn ghost">Omitir</button>
+      <button type="button" id="onboarding-next" class="onboarding-btn primary">Siguiente</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="js/config.js?v=57"></script>
+<script src="js/state.js?v=62"></script>
+<script src="js/storage.js?v=62"></script>
+<script src="js/navigation.js?v=64"></script>
+<script src="js/viewport.js?v=57"></script>
+<script src="js/connections.js?v=63"></script>
+<script src="js/map-tree.js?v=64"></script>
+<script src="js/features-titulo.js?v=57"></script>
+<script src="js/nodes.js?v=57"></script>
+<script src="js/ui.js?v=57"></script>
+<script src="js/ui-toolbar.js?v=57"></script>
+<script src="js/features-onboarding.js?v=57"></script>
+<script src="js/features-daily-checklist.js?v=71"></script>
+<script src="js/features-search.js?v=64"></script>
+<script src="js/features-backup.js?v=57"></script>
+<script src="js/features-edit.js?v=57"></script>
+<script src="js/features-markers.js?v=57"></script>
+<script src="js/features-documents.js?v=57"></script>
+<script src="js/features-media.js?v=57"></script>
+<script src="js/features-capture.js?v=57"></script>
+<script src="js/features-focus.js?v=57"></script>
+<script src="js/features-shortcuts.js?v=57"></script>
+<script src="js/features-regions.js?v=57"></script>
+<script src="js/nucleus-connections.js?v=61"></script>
+<script src="js/features-nucleus-hub.js?v=73"></script>
+<script type="module" src="js/nucleus-core-3d.js?v=68"></script>
+<script src="js/main.js?v=74"></script>
+</body>
+</html>
