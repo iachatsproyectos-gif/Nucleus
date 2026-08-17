@@ -35,6 +35,7 @@ Nucleus takes a different approach:
      │     │      │      │     │
    Work  Game   Health  Notes  Concepts
 
+```
 ✦ Features
 Spatial canvas
 Nodes, subs and connections
