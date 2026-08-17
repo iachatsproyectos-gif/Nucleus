@@ -56,20 +56,20 @@ PWA / offline support
 | `Alt + ← / →` | Navigation history |
 
 
-##🛠️ Run locally
+## 🛠️ Run locally
 git clone https://github.com/iachatsproyectos-gif/Nucleus.git
 cd Nucleus
 python -m http.server 8080
 
 Open http://localhost:8080.
 
-##🧠 Philosophy
+## 🧠 Philosophy
 
 Your life is a system, not a list.
 
 Nucleus is built around the idea that projects, goals, ideas and knowledge are interconnected — and should be represented that way.
 
-##🗺️ Roadmap
+## 🗺️ Roadmap
  Spatial system
  Nodes & connections
  Levels
@@ -84,13 +84,13 @@ Nucleus is built around the idea that projects, goals, ideas and knowledge are i
  AI integration
  Plugin system
  
-##🔒 Privacy
+## 🔒 Privacy
 
 Nucleus is local-first.
 
 Your data is stored in your browser and is not uploaded to a server by default.
 
-##📄 License
+## 📄 License
 
 Currently intended for personal use by the author.
 
